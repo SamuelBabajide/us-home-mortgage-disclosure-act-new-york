@@ -62,7 +62,27 @@ Applications fell 31 percent in a single year and dollars fell 43 percent, which
 
 ## 3. Finding 2: nine tenths of this market is one product, and half the money is one purpose
 
-[▶ query 02](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=02) · [▶ query 03](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=03)
+[▶ query 02](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=02)
+
+```sql
+-- General analysis section 2: which products carry this market.
+SELECT c.label                                           AS loan_type,
+       count(*)                                          AS applications,
+       round(CAST(100.0*count(*) AS DECIMAL(24,8))
+                  / CAST(sum(count(*)) OVER () AS DECIMAL(24,8)), 1) AS pct,
+       round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (
+              ORDER BY CASE WHEN f.action_taken IN ('1','2') THEN f.loan_amount END)
+             AS numeric))                                AS median_approved,
+       round(CAST(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1') AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS disbursed_bn
+FROM marts.fct_application f
+JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
+JOIN ref.ref_code c ON c.code_field = 'loan_type' AND c.code_value = p.loan_type
+WHERE f.action_taken <> '6'
+GROUP BY 1 ORDER BY 2 DESC, 1;
+```
 
 | loan type | applications | share | approval rate | median approved | disbursed |
 |---|---|---|---|---|---|
@@ -70,6 +90,28 @@ Applications fell 31 percent in a single year and dollars fell 43 percent, which
 | FHA insured | 123,790 | 7.8% | 60.0% | 285,000 | 25.44bn |
 | VA guaranteed | 36,199 | 2.3% | 63.1% | 275,000 | 7.40bn |
 | RHS or FSA guaranteed | 1,930 | 0.1% | 73.3% | 145,000 | 0.20bn |
+
+[▶ query 03](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=03)
+
+```sql
+-- General analysis section 2: purpose decides both approval and loan size.
+SELECT c.label                                           AS loan_purpose,
+       count(*)                                          AS applications,
+       round(CAST(100.0*count(*) AS DECIMAL(24,8))
+                  / CAST(sum(count(*)) OVER () AS DECIMAL(24,8)), 1) AS pct,
+       round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (
+              ORDER BY CASE WHEN f.action_taken IN ('1','2') THEN f.loan_amount END)
+             AS numeric))                                AS median_approved,
+       round(CAST(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1') AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS disbursed_bn
+FROM marts.fct_application f
+JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
+JOIN ref.ref_code c ON c.code_field = 'loan_purpose' AND c.code_value = p.loan_purpose
+WHERE f.action_taken <> '6'
+GROUP BY 1 ORDER BY 2 DESC, 1;
+```
 
 | loan purpose | applications | share | approval rate | median approved | disbursed |
 |---|---|---|---|---|---|
