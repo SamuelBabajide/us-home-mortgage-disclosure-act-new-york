@@ -91,6 +91,7 @@ GROUP BY 1 ORDER BY 2 DESC, 1;
 | VA guaranteed | 36,199 | 2.3% | 63.1% | 275,000 | 7.40bn |
 | RHS or FSA guaranteed | 1,930 | 0.1% | 73.3% | 145,000 | 0.20bn |
 
+
 [▶ query 03](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=03)
 
 ```sql
