@@ -10,7 +10,18 @@ Every table links to the browser playground, which opens with that query loaded 
 
 ## 1. The denominator decision, which comes before every number
 
-[▶ query 14](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=14)
+Run live [▶ query 14](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=14)
+
+```sql
+-- Phase 08 section 1: why the denominator has to be decided applications only.
+SELECT f.action_taken, c.label,
+       count(*)                                              AS rows,
+       round(100.0*count(*)/sum(count(*)) OVER (), 1)         AS pct
+FROM marts.fct_application f
+JOIN ref.ref_code c ON c.code_field='action_taken' AND c.code_value=f.action_taken
+GROUP BY 1,2
+ORDER BY 3 DESC;
+```
 
 HMDA records eight possible outcomes for an application, and only two of them are a lender's credit decision:
 
@@ -40,7 +51,7 @@ Every figure below uses `is_decided` as the denominator. Getting this wrong is t
 
 ## 2. Finding 1: the market tightened, then partly recovered
 
-[▶ query 13](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=13)
+Run live [▶ query 13](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=13)
 
 ```sql
 SELECT activity_year,
@@ -64,13 +75,13 @@ Decided volume falls by 31 percent from 2022 to 2023 as rates rise, and the deni
 
 ## 3. Finding 2: what caused the 2023 deterioration, and where I was wrong
 
-[▶ query 17](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=17)
-
 **I predicted this incorrectly before measuring it, and the correction is more instructive than the result.**
 
 My reasoning was that the 2023 collapse in refinancing would push the aggregate denial rate *down*, because refinancing carries a higher denial rate than home purchase and there was suddenly much less of it. That is sound as far as it goes, and it is wrong, because it only considered the mix and ignored what happened inside each product.
 
 A shift-share decomposition separates the two. The change in an aggregate rate is the sum of a **mix effect** (the same products, in different proportions) and a **within effect** (the same proportions, at different rates).
+
+Run live [▶ query 17](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=17)
 
 ```sql
 WITH y AS (
@@ -101,6 +112,38 @@ FROM j;
 
 So the answer is the opposite of my prediction. Refinancing shrinking did push the rate down, by 1.09 points for refinancing and 1.38 for cash-out. But home improvement and "other purpose" grew from 25.0 to 32.1 percent of the market combined, and both deny at over 40 percent, which more than cancelled it out. And underneath all of that, **every single product denied more often in 2023 than in 2022.**
 
+Copy query to run live on the SQL Playground.
+```sql
+-- The per-product detail behind the shift-share totals in query 17.
+-- Same three CTEs as the headline query; only the final SELECT differs.
+-- Summing the last two columns reproduces mix_effect 0.860 and within_effect 2.790.
+WITH y AS (
+  SELECT f.activity_year AS yr, p.loan_purpose,
+         count(*) FILTER (WHERE f.action_taken IN ('1','3')) AS decided,
+         count(*) FILTER (WHERE f.action_taken = '3')        AS denied
+  FROM marts.fct_application f
+  JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
+  WHERE f.activity_year IN (2022, 2023)
+  GROUP BY 1,2),
+t AS (SELECT yr, sum(decided) AS tot FROM y GROUP BY 1),
+j AS (SELECT y.loan_purpose,
+        max(CASE WHEN yr=2022 THEN 1.0*y.decided/t.tot    END) AS w22,
+        max(CASE WHEN yr=2023 THEN 1.0*y.decided/t.tot    END) AS w23,
+        max(CASE WHEN yr=2022 THEN 1.0*y.denied/y.decided END) AS r22,
+        max(CASE WHEN yr=2023 THEN 1.0*y.denied/y.decided END) AS r23
+      FROM y JOIN t USING (yr) GROUP BY 1)
+SELECT c.label                                            AS purpose,
+       round(CAST(100*j.w22 AS numeric), 1)               AS share_2022,
+       round(CAST(100*j.w23 AS numeric), 1)               AS share_2023,
+       round(CAST(100*j.r22 AS numeric), 1)               AS rate_2022,
+       round(CAST(100*j.r23 AS numeric), 1)               AS rate_2023,
+       round(CAST(100*(j.w23-j.w22)*j.r22 AS numeric), 3) AS mix,
+       round(CAST(100*j.w23*(j.r23-j.r22) AS numeric), 3) AS within
+FROM j
+JOIN ref.ref_code c ON c.code_field = 'loan_purpose' AND c.code_value = j.loan_purpose
+ORDER BY 7 DESC NULLS LAST, 1;
+```
+
 | purpose | share 2022 | share 2023 | rate 2022 | rate 2023 | mix | within |
 |---|---|---|---|---|---|---|
 | Home improvement | 14.9% | 18.2% | 40.9% | 44.5% | +1.361 | +0.657 |
@@ -115,7 +158,7 @@ The lesson is the one worth keeping: an aggregate can move for two completely di
 
 ## 4. Finding 3: outcomes differ sharply by applicant group
 
-[▶ query 15](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=15)
+Run live [▶ query 15](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=15)
 
 ```sql
 SELECT a.derived_race,
@@ -124,7 +167,8 @@ SELECT a.derived_race,
 FROM marts.fct_application f
 JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
 WHERE f.action_taken IN ('1','3') AND f.activity_year = 2025
-GROUP BY 1 ORDER BY 2 DESC;
+GROUP BY 1
+ORDER BY 2 DESC;
 ```
 
 | group (2025) | decided | denial rate |
@@ -140,7 +184,7 @@ GROUP BY 1 ORDER BY 2 DESC;
 | *Free form text only* | 80 | *62.5%* |
 
 Collapsing that to the comparison a reader will ask for, White against every other reported race combined:
-
+Copy query to run live on the SQL Playground.
 ```sql
 WITH d AS (
   SELECT f.action_taken,
@@ -174,7 +218,7 @@ Either way, the number on its own is close to meaningless, because applicants di
 
 ## 5. Finding 4: the gap survives income
 
-[▶ query 16](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=16)
+Run live [▶ query 16](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=16)
 
 Banding income and pivoting the bands into columns keeps every group on one line. One pass, no self-joins, using `FILTER` twice per cell:
 
@@ -218,6 +262,34 @@ Denial rate by applicant income, 2025:
 | Native Hawaiian or Other Pacific Islander | 564 | 68.4% | 55.3% | 45.4% | 38.5% | 36.2% |
 
 Swap the `derived_race` grouping for the White against all other reported races split from section 4 and the same five bands give:
+Copy query to run live on the SQL Playground.
+```sql
+WITH d AS (
+  SELECT f.action_taken,
+         CASE WHEN a.derived_race = 'White' THEN 'W' ELSE 'O' END AS grp,
+         CASE WHEN f.income_thousands <  50 THEN '1 under 50k'
+              WHEN f.income_thousands < 100 THEN '2 50k to 100k'
+              WHEN f.income_thousands < 150 THEN '3 100k to 150k'
+              WHEN f.income_thousands < 200 THEN '4 150k to 200k'
+              ELSE                               '5 200k and above' END AS band
+  FROM marts.fct_application f
+  JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
+  WHERE f.action_taken IN ('1','3') AND f.activity_year = 2025
+    AND f.income_thousands IS NOT NULL
+    AND a.derived_race NOT IN ('Race Not Available','Free Form Text Only'))
+SELECT band AS applicant_income,
+       count(*) FILTER (WHERE grp='W')                              AS white_decided,
+       count(*) FILTER (WHERE grp='O')                              AS other_decided,
+       round(100.0*count(*) FILTER (WHERE action_taken='3' AND grp='W')
+             /nullif(count(*) FILTER (WHERE grp='W'),0), 1)         AS white,
+       round(100.0*count(*) FILTER (WHERE action_taken='3' AND grp='O')
+             /nullif(count(*) FILTER (WHERE grp='O'),0), 1)         AS all_other_reported_races,
+       round(100.0*count(*) FILTER (WHERE action_taken='3' AND grp='O')
+             /nullif(count(*) FILTER (WHERE grp='O'),0)
+           - 100.0*count(*) FILTER (WHERE action_taken='3' AND grp='W')
+             /nullif(count(*) FILTER (WHERE grp='W'),0), 1)         AS gap
+FROM d GROUP BY 1 ORDER BY 1;
+```
 
 | applicant income (2025) | White | all other reported races | gap |
 |---|---|---|---|
@@ -235,7 +307,29 @@ The combined figure does, however, understate what happens at the far end of the
 
 ## 6. Finding 5: it survives the product
 
-| loan purpose | overall | Black | White |
+Copy query to run live on the SQL Playground.
+```sql
+SELECT c.label                                                    AS loan_purpose,
+       count(*)                                                   AS decided,
+       round(100.0*count(*) FILTER (WHERE f.action_taken='3')
+             /count(*), 1)                                        AS overall_denial,
+       round(100.0*count(*) FILTER (WHERE f.action_taken='3'
+                   AND a.derived_race='Black or African American')
+             /nullif(count(*) FILTER (
+                   WHERE a.derived_race='Black or African American'),0), 1)  AS black,
+       round(100.0*count(*) FILTER (WHERE f.action_taken='3'
+                   AND a.derived_race='White')
+             /nullif(count(*) FILTER (WHERE a.derived_race='White'),0), 1)   AS white
+FROM marts.fct_application f
+JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
+JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
+JOIN ref.ref_code c ON c.code_field = 'loan_purpose' AND c.code_value = p.loan_purpose
+WHERE f.action_taken IN ('1','3')
+  AND p.loan_purpose <> '5'          -- "Not applicable", 174 decided applications
+GROUP BY 1 ORDER BY 5, 1;
+```
+
+| loan purpose | overall denial | Black | White |
 |---|---|---|---|
 | Home purchase | 13.3% | 20.8% | 11.6% |
 | Cash-out refinancing | 27.0% | 39.0% | 23.9% |
@@ -247,7 +341,28 @@ Home improvement is the finding inside the finding. It is the second largest pro
 
 ## 7. Finding 6: it survives geography, measured two ways
 
-[▶ query 18](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=18)
+Run live [▶ query 18](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=18)
+
+```sql
+WITH d AS (
+  SELECT f.action_taken,
+         CASE WHEN t.minority_population_pct <  20 THEN '1 under 20%'
+              WHEN t.minority_population_pct <  40 THEN '2 20 to 40%'
+              WHEN t.minority_population_pct <  60 THEN '3 40 to 60%'
+              WHEN t.minority_population_pct <  80 THEN '4 60 to 80%'
+              ELSE                                       '5 80% and above'
+         END AS minority_band
+  FROM marts.fct_application f
+  JOIN marts.dim_tract t
+    ON t.activity_year = f.activity_year AND t.census_tract = f.census_tract
+  WHERE f.action_taken IN ('1','3')
+    AND f.census_tract <> 'UNKNOWN'
+    AND t.minority_population_pct IS NOT NULL)
+SELECT minority_band AS tract_minority_population,
+       count(*)      AS decided,
+       round(100.0*count(*) FILTER (WHERE action_taken='3')/count(*), 1) AS denial_rate
+FROM d GROUP BY 1 ORDER BY 1;
+```
 
 First, denial rises with the minority share of the neighbourhood:
 
@@ -261,30 +376,48 @@ First, denial rises with the minority share of the neighbourhood:
 
 That gradient is consistent with either explanation, because applicants are not randomly distributed across tracts. So the stronger test is to compare applicants **within the same census tract**, which holds the neighbourhood, the local housing market and the local economy constant by construction.
 
+62 tracts have at least 100 decided applications from each group. The Black denial rate is higher in **60 of the 62**, the median gap is 10.9 points, and the range runs from -2.6 to +23.8. Two tracts out of 62 going the other way is about what random variation would produce.
+
+Copy query to run live on the SQL Playground.
 ```sql
-WITH t AS (
-  SELECT f.census_tract,
-    100.0*count(*) FILTER (WHERE f.action_taken='3' AND a.derived_race='Black or African American')
-      / nullif(count(*) FILTER (WHERE a.derived_race='Black or African American'),0) AS rb,
-    100.0*count(*) FILTER (WHERE f.action_taken='3' AND a.derived_race='White')
-      / nullif(count(*) FILTER (WHERE a.derived_race='White'),0) AS rw
+WITH g AS (
+  SELECT f.census_tract, a.derived_race AS grp,
+         count(*)                                        AS decided,
+         count(*) FILTER (WHERE f.action_taken = '3')    AS denied
   FROM marts.fct_application f
   JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
-  WHERE f.action_taken IN ('1','3') AND f.census_tract <> 'UNKNOWN'
-    AND a.derived_race IN ('White','Black or African American')
-  GROUP BY 1
-  HAVING count(*) FILTER (WHERE a.derived_race='Black or African American') >= 100
-     AND count(*) FILTER (WHERE a.derived_race='White') >= 100)
-SELECT count(*) AS tracts,
-       count(*) FILTER (WHERE rb > rw) AS black_rate_higher,
-       round(percentile_cont(0.5) WITHIN GROUP (ORDER BY rb-rw)::numeric, 1) AS median_gap
-FROM t;
+  WHERE f.action_taken IN ('1','3')
+    AND f.census_tract <> 'UNKNOWN'
+    AND a.derived_race NOT IN ('Race Not Available','Free Form Text Only')
+  GROUP BY 1,2),
+w AS (SELECT census_tract, decided AS white_decided,
+             100.0*denied/decided AS rate_white
+      FROM g WHERE grp = 'White'),
+o AS (SELECT census_tract, grp, decided AS group_decided,
+             100.0*denied/decided AS rate_group
+      FROM g WHERE grp <> 'White'),
+p AS (SELECT o.grp, o.rate_group - w.rate_white AS gap
+      FROM o JOIN w ON w.census_tract = o.census_tract
+      WHERE o.group_decided >= 100 AND w.white_decided >= 100)
+SELECT grp                                              AS applicant_group,
+       count(*)                                         AS tracts,
+       count(*) FILTER (WHERE gap > 0)                  AS group_rate_higher,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (ORDER BY gap) AS numeric), 1) AS median_gap,
+       round(CAST(min(gap) AS numeric), 1)              AS min_gap,
+       round(CAST(max(gap) AS numeric), 1)              AS max_gap
+FROM p
+GROUP BY 1
+ORDER BY 2 DESC, 1;
 ```
 
-62 tracts have at least 100 decided applications from each group. The Black denial rate is higher in **60 of the 62**, the median gap is 10.9 points, and the range runs from -2.6 to +23.8. Two tracts out of 62 going the other way is about what random variation would produce.
+| applicant group | tracts | group rate higher | median gap | range |
+|---|---|---|---|---|
+| Asian | 102 | 23 of 102 | **−5.2** | −33.3 to +18.3 |
+| Black or African American | 62 | **60 of 62** | **+10.9** | −2.6 to +23.8 |
 
 ## 8. Finding 7: it survives the lender
 
+Copy query to run live on the SQL Playground.
 ```sql
 WITH d AS (
   SELECT i.institution_name AS lender, f.action_taken, a.derived_race,
