@@ -13,7 +13,6 @@ Every table links to the browser playground, which opens with that query loaded 
 Run live [▶ query 14](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=14)
 
 ```sql
--- Phase 08 section 1: why the denominator has to be decided applications only.
 SELECT f.action_taken, c.label,
        count(*)                                              AS rows,
        round(100.0*count(*)/sum(count(*)) OVER (), 1)         AS pct
@@ -114,9 +113,6 @@ So the answer is the opposite of my prediction. Refinancing shrinking did push t
 
 Copy query to run live on the SQL Playground.
 ```sql
--- The per-product detail behind the shift-share totals in query 17.
--- Same three CTEs as the headline query; only the final SELECT differs.
--- Summing the last two columns reproduces mix_effect 0.860 and within_effect 2.790.
 WITH y AS (
   SELECT f.activity_year AS yr, p.loan_purpose,
          count(*) FILTER (WHERE f.action_taken IN ('1','3')) AS decided,
