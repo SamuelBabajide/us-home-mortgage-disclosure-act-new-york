@@ -62,7 +62,7 @@ Applications fell 31 percent in a single year and dollars fell 43 percent, which
 
 ## 3. Finding 2: nine tenths of this market is one product, and half the money is one purpose
 
-[▶ query 02](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=02)
+Run live [▶ query 02](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=02)
 
 ```sql
 -- General analysis section 2: which products carry this market.
@@ -92,7 +92,7 @@ GROUP BY 1 ORDER BY 2 DESC, 1;
 | RHS or FSA guaranteed | 1,930 | 0.1% | 73.3% | 145,000 | 0.20bn |
 
 
-[▶ query 03](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=03)
+Run live [▶ query 03](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=03)
 
 ```sql
 -- General analysis section 2: purpose decides both approval and loan size.
@@ -131,7 +131,7 @@ And the money concentrates harder than the volume. Home purchase is 46 percent o
 
 ## 4. Finding 3: a quarter of this market sits behind someone else's claim
 
-[▶ query 04](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=04)
+Run live [▶ query 04](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=04)
 
 Lien position is the single most informative structural field HMDA publishes. A first lien is repaid first if the property is sold or foreclosed. A subordinate lien is repaid only after the first lien is satisfied, which is why it is priced and underwritten differently.
 
@@ -157,7 +157,7 @@ Alongside it, from the same junk dimension:
 
 ## 5. Finding 4: two thirds of applications are for exactly thirty years
 
-[▶ query 05](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=05)
+Run live [▶ query 05](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=05)
 
 | term | applications | share | approved | approval rate | median approved | disbursed |
 |---|---|---|---|---|---|---|
@@ -178,7 +178,7 @@ The interesting row is the one in the middle. The 15 to 30 year bands approve at
 
 ## 6. Finding 5: the average loan is not a loan anyone gets
 
-[▶ query 06](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=06)
+Run live [▶ query 06](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=06)
 
 Approved loans only.
 
@@ -199,7 +199,7 @@ The spread also widened faster than the middle moved. Between 2023 and 2025 the 
 
 ## 7. Finding 6: approval falls with every decade of age, and so does loan size
 
-[▶ query 07](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=07)
+Run live [▶ query 07](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=07)
 
 | age band | applications | % of applications | approved | approval rate | median approved loan | total disbursed |
 |---|---|---|---|---|---|---|
@@ -226,7 +226,7 @@ These are companies. A limited partnership buying an apartment building has no a
 
 ## 8. Finding 7: a second name on the application is worth eight points
 
-[▶ query 08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08)
+Run live [▶ query 08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08)
 
 Descriptive only. Whether these gaps survive income, product, neighbourhood and lender is [phase 08b](08b_analysis_disparity.md), and the answer there is not the same as the answer here.
 
@@ -286,7 +286,7 @@ Black applicants use FHA at five times the Asian rate. Asian applicants are on a
 
 ## 9. Finding 8: the biggest market has the lowest approval rate
 
-[▶ query 09](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=09)
+Run live [▶ query 09](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=09)
 
 | area | applications | share | approval rate | median approved | disbursed |
 |---|---|---|---|---|---|
@@ -313,7 +313,7 @@ Upstate approves far more readily, 71.7 percent in Rochester against 58.3 in New
 
 ## 10. Finding 9: income sets the size of the loan, not the multiple
 
-[▶ query 10](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=10)
+Run live [▶ query 10](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=10)
 
 | income band | applications | share | approval rate | p25 | median | p75 | disbursed |
 |---|---|---|---|---|---|---|---|
@@ -344,7 +344,7 @@ The spread widens enormously alongside it. The middle half of the bottom band is
 
 ## 11. Finding 10: the rate environment swamps the product
 
-[▶ query 11](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=11)
+Run live [▶ query 11](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=11)
 
 Originated loans only, because a rate exists only on a loan that was actually made. Coverage is **96.4 percent** of originations, stable across all four years, and the missing 3.6 percent is concentrated in exempt filers rather than spread evenly.
 
@@ -383,7 +383,7 @@ Cash-out refinancing is the row worth a second look: its median is 6.990 but its
 
 ## 12. Finding 11: more than a third of denials are one reason
 
-[▶ query 12](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=12)
+Run live [▶ query 12](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=12)
 
 HMDA lets a filer record up to four denial reasons. This project keeps them in a bridge table, `marts.br_denial_reason`, because flattening four optional reasons into four columns on the fact table would break first normal form. 78.3 percent of denials give one reason, 17.9 percent give two, 3.4 percent three and 0.5 percent all four.
 
