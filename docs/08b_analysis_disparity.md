@@ -463,9 +463,9 @@ The generalisation is not perfectly uniform, and the exception is worth naming: 
 
 ## 9. Finding 8: lenders differ from each other more than they differ from their own average
 
-[▶ query 19](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=19)
-
 This one reframes everything above, and it is the most useful finding in the project for anyone who has to act.
+
+Run live [▶ query 19](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=19)
 
 ```sql
 WITH lt AS (
@@ -493,9 +493,19 @@ It is also the finding with a direct implication, because it is the one an indiv
 
 ## 10. Finding 9: denial is not the only channel
 
-[▶ query 21](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=21)
-
 4.47 percent of all applications, 78,521 of them, end in "file closed for incompleteness" rather than a decision. That is not a denial, so it is invisible to every number in this document.
+
+Run live [▶ query 21](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=21)
+```sql
+SELECT i.institution_name,
+       count(*)                                                          AS applications,
+       round(100.0*count(*) FILTER (WHERE f.action_taken='5')/count(*),1) AS closed_incomplete_pct
+FROM marts.fct_application f
+JOIN marts.dim_institution i ON i.activity_year = f.activity_year AND i.lei = f.lei
+GROUP BY 1
+HAVING count(*) >= 20000
+ORDER BY 3 DESC;
+```
 
 | lender (20,000+ applications) | closed for incompleteness |
 |---|---|
@@ -545,6 +555,7 @@ A fair-lending review that looks only at denial rates misses this entirely. Addi
 
 Phase 08 section 12 shows that debt-to-income is the largest single reason for denial across the whole market, at 36.7 percent. Splitting the same primary reasons by group shows the mix is not the same for everyone.
 
+Copy query to run live on the SQL Playground.
 ```sql
 SELECT a.derived_race, count(*) AS denials_with_reason,
   round(100.0*count(*) FILTER (WHERE v.denial_reason = 'Debt-to-income ratio')
@@ -587,6 +598,7 @@ One limitation is specific to this table. HMDA does not require a denial reason 
 
 For loans that were actually originated, `rate_spread` is the difference between the APR and the market benchmark rate, so it measures price rather than access.
 
+Copy query to run live on the SQL Playground.
 ```sql
 SELECT a.derived_race,
        count(*) AS originated_with_spread,
@@ -624,6 +636,7 @@ Note also that this is a conditional comparison on a selected group: these are t
 
 `rate_spread` is the difference between the loan's APR and the market benchmark for a comparable loan, so it already adjusts for product and timing. `interest_rate` is the raw number on the note and adjusts for nothing. Running the same comparison on the raw rate, within 2025 so the rate environment is held constant:
 
+Copy query to run live on the SQL Playground.
 ```sql
 SELECT a.derived_race, count(*) AS loans,
        round(avg(f.interest_rate)::numeric, 3) AS mean_rate,
