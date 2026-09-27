@@ -481,13 +481,8 @@ FROM (SELECT census_tract, max(rate)-min(rate) AS spread
 ```
 
 In the 532 census tracts where at least four lenders each made at least 30 decisions:
-
-| | denial rate spread between lenders in the same tract |
-|---|---|
-| 25th percentile | 22.8 points |
-| **median** | **30.6 points** |
-| 75th percentile | 39.5 points |
-| maximum | 97.3 points |
+| **tracts** |** p25 | median | p75 | max_spread **|
+| 532 | 228 |	306 | 395 | 973 |
 
 In a typical New York census tract, the most and least restrictive active lender are 30 points apart on the same neighbourhood. That dwarfs every group gap in this phase, the 8.3 points between White and all other reported races and the 17.2 points between White and Black applicants alike, and it dwarfs the 3.65 point four-year market movement.
 
