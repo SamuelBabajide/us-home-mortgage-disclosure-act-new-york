@@ -29,7 +29,7 @@ So the funnel in this document is: **applications → approved → disbursed.**
 
 ## 2. Finding 1: the market lost a third of its volume and has not got it back
 
-[▶ query 01](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=01)
+Run live [▶ query 01](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=01)
 
 ```sql
 SELECT activity_year,
