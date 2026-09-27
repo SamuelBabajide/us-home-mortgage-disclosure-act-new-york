@@ -327,7 +327,7 @@ These are companies. A limited partnership buying an apartment building has no a
 
 ## 8. Finding 7: a second name on the application is worth eight points
 
-Run live [▶ query 08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08)
+[▶ query 08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08)
 
 ```sql
 -- General analysis section 12: the sex by race funnel.
