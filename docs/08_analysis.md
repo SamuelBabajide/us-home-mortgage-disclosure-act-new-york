@@ -327,7 +327,25 @@ These are companies. A limited partnership buying an apartment building has no a
 
 ## 8. Finding 7: a second name on the application is worth eight points
 
-Run live [▶ query 08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08)
+Descriptive only. Whether these gaps survive income, product, neighbourhood and lender is [phase 08b](08b_analysis_disparity.md), and the answer there is not the same as the answer here.
+
+| applicant sex | applications | share | approval rate | median approved | disbursed |
+|---|---|---|---|---|---|
+| Male | 557,903 | 34.9% | 58.9% | 225,000 | 111.93bn |
+| Joint | 505,023 | 31.6% | **69.5%** | 265,000 | 130.91bn |
+| Female | 371,627 | 23.3% | 59.6% | 195,000 | 59.60bn |
+| Sex not available | 162,123 | 10.2% | 58.9% | 335,000 | 68.97bn |
+
+| applicant race | applications | share | approval rate | median approved | disbursed |
+|---|---|---|---|---|---|
+| White | 983,251 | 61.6% | 66.0% | 205,000 | 198.23bn |
+| Race not available | 299,190 | 18.7% | 56.9% | 315,000 | 98.89bn |
+| Asian | 147,339 | 9.2% | 62.1% | **455,000** | 44.13bn |
+| Black or African American | 124,980 | 7.8% | 49.5% | 255,000 | 19.63bn |
+| Joint | 27,293 | 1.7% | 68.0% | 355,000 | 8.86bn |
+| American Indian or Alaska Native | 6,829 | 0.4% | 41.9% | 165,000 | 0.67bn |
+
+Crossing the two, which is the pivot. Run live [query 08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08)
 
 ```sql
 -- General analysis section 12: the sex by race funnel.
@@ -351,26 +369,6 @@ WHERE f.action_taken <> '6'
   AND a.derived_race IN ('White','Black or African American','Asian','Joint')
 GROUP BY 1,2 ORDER BY 1, 3 DESC, 2;
 ```
-
-Descriptive only. Whether these gaps survive income, product, neighbourhood and lender is [phase 08b](08b_analysis_disparity.md), and the answer there is not the same as the answer here.
-
-| applicant sex | applications | share | approval rate | median approved | disbursed |
-|---|---|---|---|---|---|
-| Male | 557,903 | 34.9% | 58.9% | 225,000 | 111.93bn |
-| Joint | 505,023 | 31.6% | **69.5%** | 265,000 | 130.91bn |
-| Female | 371,627 | 23.3% | 59.6% | 195,000 | 59.60bn |
-| Sex not available | 162,123 | 10.2% | 58.9% | 335,000 | 68.97bn |
-
-| applicant race | applications | share | approval rate | median approved | disbursed |
-|---|---|---|---|---|---|
-| White | 983,251 | 61.6% | 66.0% | 205,000 | 198.23bn |
-| Race not available | 299,190 | 18.7% | 56.9% | 315,000 | 98.89bn |
-| Asian | 147,339 | 9.2% | 62.1% | **455,000** | 44.13bn |
-| Black or African American | 124,980 | 7.8% | 49.5% | 255,000 | 19.63bn |
-| Joint | 27,293 | 1.7% | 68.0% | 355,000 | 8.86bn |
-| American Indian or Alaska Native | 6,829 | 0.4% | 41.9% | 165,000 | 0.67bn |
-
-Crossing the two, which is the pivot [query 08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08) returns:
 
 <table>
 <thead>
