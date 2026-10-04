@@ -4,7 +4,7 @@ A PostgreSQL analytics project on 1,755,419 real mortgage applications, built fr
 
 ### ▶ [Open the playground](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/) · [Browse the data dictionary](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/catalog/) · [See the ERD](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/erd/) · [Project home](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/)
 
-The playground gives you fifteen tables, a SQL box and the twenty-two queries below, running in your browser. Nothing is installed, no account is created, and no data leaves your machine.
+The playground gives you fifteen tables, a SQL box and the thirty-two queries below, running in your browser. Nothing is installed, no account is created, and no data leaves your machine.
 
 ---
 
@@ -53,7 +53,7 @@ They are separate documents on purpose. A single document that answers both answ
 
 ---
 
-## The twenty-two questions, and the SQL that answers them
+## The thirty-two questions, and the SQL that answers them
 
 **Click a query number and the playground opens with that query loaded and already executed**, against the real 1.75 million rows, in your browser. You can then edit it and press Ctrl + Enter to try your own version.
 
@@ -80,16 +80,26 @@ They are separate documents on purpose. A single document that answers both answ
 |---|---|---|
 | [13](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=13) | Did credit get harder to obtain? | Denial rose from 23.3% in 2022 to 26.9% in 2023, easing to 24.9% by 2025. |
 | [14](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=14) | Why does the denominator matter? | Only 54.2% of rows are originated and 18.2% denied. Every rate in the disparity analysis uses decided applications only. |
-| [15](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=15) | Do outcomes differ by group? | 2025: 22.4% for White against 30.7% for all other reported races combined, and 39.6% for Black applicants. |
-| [16](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=16) | Does the gap survive income? | No. It is 4.5 to 15.1 points in every band against the combined group, and 13.6 to 19.3 against Black applicants specifically. |
+| [15](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=15) | Do outcomes differ by group? | 2025: 22.4% for White, 24.5% for Asian, 39.6% for Black and 49.9% for Native Hawaiian or Other Pacific Islander applicants. |
+| [15b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=15b) | What is the single comparison a reader asks for? | White against all other reported races combined: 22.4% against 30.7%, an 8.3 point gap at a ratio of 1.37. Unreported race is held out of both sides. |
+| [16](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=16) | Does the gap survive income? | No. Every group's rate falls as income rises and none of them converge. Above 200,000 dollars: 15.7% White against 30.2% Black. |
+| [16b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=16b) | Does the combined gap close at the top? | It narrows to 4.5 points but never closes, and it narrows because Asian and Joint applicants converge, not because the Black gap does. |
 | [17](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=17) | Was the 2023 tightening mix or behaviour? | A shift share splits the 3.65 point rise into 0.86 from mix and 2.79 from products denying more. **I predicted the opposite.** |
-| [18](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=18) | Does it survive the neighbourhood? | In the 62 tracts with 100+ decided applications from both groups, the Black rate is higher in 60, by a median of 10.9 points. |
+| [17b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=17b) | Which products moved it, and by how much? | All five denied more often than in 2022. Home improvement and other purpose gained 7 points of share and both deny above 40%. |
+| [18](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=18) | Does denial track the neighbourhood? | It climbs from 21.7% in tracts under 20% minority to 37.2% at 80% and above. On its own that proves nothing, which is why 18b exists. |
+| [18b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=18b) | Does it survive the neighbourhood? | Compared inside the same census tract, the Black rate is higher in 60 of 62, by a median of 10.9 points. Asian applicants run 5.2 points lower. |
 | [19](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=19) | How much does the lender matter? | In 532 tracts with four or more active lenders, the median gap between strictest and loosest **in the same tract** is 30.6 points. |
 | [20](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=20) | How many applicants report more than one race? | 18,051, not 106,971. HMDA race codes are hierarchical and counting them naively overstates it sixfold. |
 | [21](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=21) | Is denial the only way an application ends badly? | No. "File closed for incompleteness" ranges from 0.2% to 28.5% between large lenders. |
+| [21b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=21b) | Is that channel neutral between groups? | No. Closed for incompleteness 5.6% against 4.3%, withdrawn 13.0% against 10.7%. American Indian or Alaska Native applicants are highest at 9.0%. |
+| [21c](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=21c) | Does the reason given for a denial differ? | Black applicants are told credit history 28.3% of the time against 23.9% for White. Asian applicants are the reverse at 14.9%. |
 | [22](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=22) | Can every published row be accounted for? | 1,754,846 modelled plus 573 quarantined equals 1,755,419 published. Nothing was silently dropped. |
+| [23](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=23) | Does the gap survive the product? | No. The Black rate is above the White rate in all five loan purposes. Home improvement denies 64.5% of Black applicants against 34.7% of White. |
+| [24](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=24) | Does the gap survive the lender? | No. All six of the largest lenders deny the other group more often, while disagreeing by 34 points on how often they deny anyone at all. |
+| [25](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=25) | Is the gap in price as well as access? | Yes, and wider. Median rate spread 0.441 for Black borrowers against 0.250 for White. Combining all non-White groups reverses the sign. |
+| [25b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=25b) | Is it in the headline rate too? | No. The Black and White median interest rates are identical at 6.625%. The gap is in the premium over benchmark, not in the coupon. |
 
-The SQL lives in [`playground/queries/`](playground/queries) and runs unchanged against both PostgreSQL and the browser build. A [parity test](playground/parity_test.py) executes all twenty-two against both engines, plus the three labelled views, and fails on any difference.
+The SQL lives in [`playground/queries/`](playground/queries) and runs unchanged against both PostgreSQL and the browser build. A [parity test](playground/parity_test.py) executes all thirty-two against both engines, plus the three labelled views, and fails on any difference.
 
 ---
 
@@ -169,7 +179,7 @@ Each phase ends with a table headed *what is worth defending in a review*, and e
 migrations/       000 to 009, run in order, about eight minutes end to end
 seed/             the loader scripts and one small derived CSV
 playground/       the source that builds the browser site
-playground/queries/  the twenty-two published queries
+playground/queries/  the thirty-two published queries
 catalog/          the source that builds the data dictionary
 docs/             the eleven phase documents
 docs/playground/  the published playground
@@ -195,8 +205,4 @@ SETUP_WINDOWS.md  building the database from nothing on Windows
 
 ---
 
-## Author
-
-**Samuel Babajide** — Data Scientist specialising in applied analytics and predictive modelling within complex, regulated environments. Questions and corrections are welcome in the issues.
-
-[Website](https://samuelbabajide.github.io/) · [LinkedIn](https://linkedin.com/in/samuelbbabajide) 
+Built by [Samuel Babajide](https://github.com/SamuelBabajide). Questions and corrections are welcome in the issues.
