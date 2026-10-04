@@ -3,10 +3,17 @@
 -- bearing. A rate exists only on a loan that was actually made, and the median
 -- rate moved from 4.375 percent in 2022 to 6.875 in 2024, so pooling the four
 -- years would measure the rate environment rather than the product.
+-- The median uses percentile_disc rather than percentile_cont. Mortgage rates and
+-- rate spreads are quoted in eighths of a point, so interpolating between the two
+-- middle loans of an even-sized group returns a price no borrower was charged.
+-- It is also the one construct in this project where PostgreSQL and DuckDB can
+-- legitimately disagree: interpolation is floating point, and on one group of 288
+-- loans the two engines landed either side of the third decimal. percentile_disc
+-- returns an observed value by position, so it is exact in both.
 SELECT c.label                                           AS loan_purpose,
        count(*)                                          AS loans,
        round(CAST(avg(f.interest_rate) AS numeric), 3)    AS mean_rate,
-       round(CAST(percentile_cont(0.5) WITHIN GROUP (ORDER BY f.interest_rate)
+       round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.interest_rate)
              AS numeric), 3)                             AS median_rate
 FROM marts.fct_application f
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk

@@ -108,14 +108,14 @@ queries:
   ...
   ok     22_reconciliation.sql  (1 rows)
 
-all 22 queries and 3 views return identical results in both engines
+all 32 queries and 3 views return identical results in both engines
 ```
 
 That output is what makes the playground trustworthy. Without it, "the same queries run here" is a hope.
 
 ### 3.1 Three more differences the test caught later
 
-Adding the twelve general-analysis queries in phase 08 took the suite from ten queries to twenty-two, and the first run failed on five checks. None of them raised an error in either engine.
+Adding the twelve general-analysis queries in phase 08 took the suite from ten queries to twenty-two, and the first run failed on five checks. None of them raised an error in either engine. Phase 08b later added ten more, taking it to thirty-two, and the first run of those failed on one: a median interest rate that interpolated between two loans and landed either side of the third decimal in the two engines. That query now uses `percentile_disc`, which returns an observed value by position rather than an interpolated one, and is exact in both.
 
 **`ORDER BY ... DESC` sorts NULLs in opposite directions.** PostgreSQL puts NULLs first, DuckDB puts them last. The top-ten geography query ranks MSAs by dollars disbursed, and three MSAs with one or two applications and no disbursement floated to the top of the PostgreSQL list and the bottom of the DuckDB one. Two different top tens, no warning. Every ordering that can see a NULL now says `NULLS LAST` explicitly rather than relying on a default.
 
