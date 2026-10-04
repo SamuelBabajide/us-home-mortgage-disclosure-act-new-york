@@ -205,4 +205,8 @@ SETUP_WINDOWS.md  building the database from nothing on Windows
 
 ---
 
-Built by [Samuel Babajide](https://github.com/SamuelBabajide). Questions and corrections are welcome in the issues.
+## Author
+
+**Samuel Babajide** — Data Scientist specialising in applied analytics and predictive modelling within complex, regulated environments.
+
+[Website](https://samuelbabajide.github.io/) · [LinkedIn](https://linkedin.com/in/samuelbbabajide) 
