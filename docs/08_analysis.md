@@ -29,7 +29,7 @@ So the funnel in this document is: **applications → approved → disbursed.**
 
 ## 2. Finding 1: the market lost a third of its volume and has not got it back
 
-[▶ query 01](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=01)
+Run live [▶ query 01](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=01)
 
 ```sql
 SELECT activity_year,
@@ -62,7 +62,27 @@ Applications fell 31 percent in a single year and dollars fell 43 percent, which
 
 ## 3. Finding 2: nine tenths of this market is one product, and half the money is one purpose
 
-[▶ query 02](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=02) · [▶ query 03](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=03)
+Run live [▶ query 02](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=02)
+
+```sql
+-- General analysis section 2: which products carry this market.
+SELECT c.label                                           AS loan_type,
+       count(*)                                          AS applications,
+       round(CAST(100.0*count(*) AS DECIMAL(24,8))
+                  / CAST(sum(count(*)) OVER () AS DECIMAL(24,8)), 1) AS pct,
+       round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (
+              ORDER BY CASE WHEN f.action_taken IN ('1','2') THEN f.loan_amount END)
+             AS numeric))                                AS median_approved,
+       round(CAST(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1') AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS disbursed_bn
+FROM marts.fct_application f
+JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
+JOIN ref.ref_code c ON c.code_field = 'loan_type' AND c.code_value = p.loan_type
+WHERE f.action_taken <> '6'
+GROUP BY 1 ORDER BY 2 DESC, 1;
+```
 
 | loan type | applications | share | approval rate | median approved | disbursed |
 |---|---|---|---|---|---|
@@ -70,6 +90,29 @@ Applications fell 31 percent in a single year and dollars fell 43 percent, which
 | FHA insured | 123,790 | 7.8% | 60.0% | 285,000 | 25.44bn |
 | VA guaranteed | 36,199 | 2.3% | 63.1% | 275,000 | 7.40bn |
 | RHS or FSA guaranteed | 1,930 | 0.1% | 73.3% | 145,000 | 0.20bn |
+
+
+Run live [▶ query 03](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=03)
+
+```sql
+-- General analysis section 2: purpose decides both approval and loan size.
+SELECT c.label                                           AS loan_purpose,
+       count(*)                                          AS applications,
+       round(CAST(100.0*count(*) AS DECIMAL(24,8))
+                  / CAST(sum(count(*)) OVER () AS DECIMAL(24,8)), 1) AS pct,
+       round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (
+              ORDER BY CASE WHEN f.action_taken IN ('1','2') THEN f.loan_amount END)
+             AS numeric))                                AS median_approved,
+       round(CAST(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1') AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS disbursed_bn
+FROM marts.fct_application f
+JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
+JOIN ref.ref_code c ON c.code_field = 'loan_purpose' AND c.code_value = p.loan_purpose
+WHERE f.action_taken <> '6'
+GROUP BY 1 ORDER BY 2 DESC, 1;
+```
 
 | loan purpose | applications | share | approval rate | median approved | disbursed |
 |---|---|---|---|---|---|
@@ -88,7 +131,29 @@ And the money concentrates harder than the volume. Home purchase is 46 percent o
 
 ## 4. Finding 3: a quarter of this market sits behind someone else's claim
 
-[▶ query 04](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=04)
+Run live [▶ query 04](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=04)
+
+```sql
+-- General analysis section 3: where the loan sits in the capital stack.
+-- A subordinate lien is repaid only after the first lien, which is why it is
+-- approved less often for a much smaller amount.
+SELECT c.label                                           AS lien_status,
+       count(*)                                          AS applications,
+       round(CAST(100.0*count(*) AS DECIMAL(24,8))
+                  / CAST(sum(count(*)) OVER () AS DECIMAL(24,8)), 1) AS pct,
+       round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (
+              ORDER BY CASE WHEN f.action_taken IN ('1','2') THEN f.loan_amount END)
+             AS numeric))                                AS median_approved,
+       round(CAST(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1') AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS disbursed_bn
+FROM marts.fct_application f
+JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
+JOIN ref.ref_code c ON c.code_field = 'lien_status' AND c.code_value = p.lien_status
+WHERE f.action_taken <> '6'
+GROUP BY 1 ORDER BY 2 DESC, 1;
+```
 
 Lien position is the single most informative structural field HMDA publishes. A first lien is repaid first if the property is sold or foreclosed. A subordinate lien is repaid only after the first lien is satisfied, which is why it is priced and underwritten differently.
 
@@ -114,7 +179,36 @@ Alongside it, from the same junk dimension:
 
 ## 5. Finding 4: two thirds of applications are for exactly thirty years
 
-[▶ query 05](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=05)
+Run live [▶ query 05](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=05)
+
+```sql
+-- General analysis section 4: how long the loans run.
+-- 30 years and above is one band on purpose: terms beyond 360 months are rare
+-- and behave like 30-year lending rather than like a separate product.
+WITH d AS (
+  SELECT CASE WHEN loan_term_months IS NULL      THEN '6 not reported'
+              WHEN loan_term_months <= 120       THEN '1 up to 10 years'
+              WHEN loan_term_months <= 180       THEN '2 10 to 15 years'
+              WHEN loan_term_months <= 240       THEN '3 15 to 20 years'
+              WHEN loan_term_months <  360       THEN '4 20 to under 30 years'
+              ELSE                                    '5 30 years and above'
+         END AS term_band, action_taken, loan_amount
+  FROM marts.fct_application
+  WHERE action_taken <> '6')
+SELECT term_band,
+       count(*)                                          AS applications,
+       round(CAST(100.0*count(*) AS DECIMAL(24,8))
+                  / CAST(sum(count(*)) OVER () AS DECIMAL(24,8)), 1) AS pct,
+       count(*) FILTER (WHERE action_taken IN ('1','2'))  AS approved,
+       round(CAST(100.0*count(*) FILTER (WHERE action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (
+              ORDER BY CASE WHEN action_taken IN ('1','2') THEN loan_amount END)
+             AS numeric))                                AS median_approved,
+       round(CAST(sum(loan_amount) FILTER (WHERE action_taken = '1') AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS disbursed_bn
+FROM d GROUP BY 1 ORDER BY 1;
+```
 
 | term | applications | share | approved | approval rate | median approved | disbursed |
 |---|---|---|---|---|---|---|
@@ -135,7 +229,24 @@ The interesting row is the one in the middle. The 15 to 30 year bands approve at
 
 ## 6. Finding 5: the average loan is not a loan anyone gets
 
-[▶ query 06](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=06)
+Run live [▶ query 06](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=06)
+
+```sql
+-- General analysis section 5: loan size, approved loans only.
+-- The mean sits far above the median in every year, which is the signature of
+-- a right-skewed distribution: a few very large loans, most of them small.
+SELECT activity_year,
+       count(*)                                                       AS approved,
+       round(CAST(percentile_cont(0.10) WITHIN GROUP (ORDER BY loan_amount) AS numeric)) AS p10,
+       round(CAST(percentile_cont(0.25) WITHIN GROUP (ORDER BY loan_amount) AS numeric)) AS p25,
+       round(CAST(percentile_cont(0.50) WITHIN GROUP (ORDER BY loan_amount) AS numeric)) AS median,
+       round(CAST(percentile_cont(0.75) WITHIN GROUP (ORDER BY loan_amount) AS numeric)) AS p75,
+       round(CAST(percentile_cont(0.90) WITHIN GROUP (ORDER BY loan_amount) AS numeric)) AS p90,
+       round(CAST(avg(loan_amount) AS numeric))                       AS mean
+FROM marts.fct_application
+WHERE action_taken IN ('1','2')
+GROUP BY 1 ORDER BY 1;
+```
 
 Approved loans only.
 
@@ -156,7 +267,40 @@ The spread also widened faster than the middle moved. Between 2023 and 2025 the 
 
 ## 7. Finding 6: approval falls with every decade of age, and so does loan size
 
-[▶ query 07](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=07)
+Run live [▶ query 07](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=07)
+
+```sql
+-- General analysis section 6: the applicant age funnel.
+-- 8888 is HMDA's code for an age that was not provided. It is kept as its own
+-- band rather than dropped, because it turns out not to be a demographic at all:
+-- 84 percent of those originations are business or commercial purpose lending,
+-- where the borrower is a company and has no age to report.
+WITH d AS (
+  SELECT CASE WHEN a.applicant_age = '8888'              THEN '7 Age not provided'
+              WHEN a.applicant_age IN ('65-74','>74')    THEN '6 65 and above'
+              WHEN a.applicant_age = '<25'               THEN '1 Under 25'
+              WHEN a.applicant_age = '25-34'             THEN '2 25-34'
+              WHEN a.applicant_age = '35-44'             THEN '3 35-44'
+              WHEN a.applicant_age = '45-54'             THEN '4 45-54'
+              WHEN a.applicant_age = '55-64'             THEN '5 55-64'
+         END AS age_band, f.action_taken, f.loan_amount
+  FROM marts.fct_application f
+  JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
+  WHERE f.action_taken <> '6')
+SELECT age_band,
+       count(*)                                          AS applications,
+       round(CAST(100.0*count(*) AS DECIMAL(24,8))
+                  / CAST(sum(count(*)) OVER () AS DECIMAL(24,8)), 1) AS pct_of_applications,
+       count(*) FILTER (WHERE action_taken IN ('1','2'))  AS approved,
+       round(CAST(100.0*count(*) FILTER (WHERE action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (
+              ORDER BY CASE WHEN action_taken IN ('1','2') THEN loan_amount END)
+             AS numeric))                                AS median_approved_loan,
+       round(CAST(sum(loan_amount) FILTER (WHERE action_taken = '1') AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS total_disbursed_bn
+FROM d GROUP BY 1 ORDER BY 1;
+```
 
 | age band | applications | % of applications | approved | approval rate | median approved loan | total disbursed |
 |---|---|---|---|---|---|---|
@@ -183,8 +327,6 @@ These are companies. A limited partnership buying an apartment building has no a
 
 ## 8. Finding 7: a second name on the application is worth eight points
 
-[▶ query 08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08)
-
 Descriptive only. Whether these gaps survive income, product, neighbourhood and lender is [phase 08b](08b_analysis_disparity.md), and the answer there is not the same as the answer here.
 
 | applicant sex | applications | share | approval rate | median approved | disbursed |
@@ -203,7 +345,30 @@ Descriptive only. Whether these gaps survive income, product, neighbourhood and 
 | Joint | 27,293 | 1.7% | 68.0% | 355,000 | 8.86bn |
 | American Indian or Alaska Native | 6,829 | 0.4% | 41.9% | 165,000 | 0.67bn |
 
-Crossing the two, which is the pivot [query 08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08) returns:
+Crossing the two, which is the pivot. Run live [query 08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08)
+
+```sql
+-- General analysis section 12: the sex by race funnel.
+-- Descriptive, not a disparity claim. The outcome gaps and what survives
+-- controlling for income, product, neighbourhood and lender are in
+-- docs/08b_analysis_disparity.md.
+SELECT a.derived_sex, a.derived_race,
+       count(*)                                          AS applications,
+       count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS approved,
+       round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (
+              ORDER BY CASE WHEN f.action_taken IN ('1','2') THEN f.loan_amount END)
+             AS numeric))                                AS median_approved,
+       round(CAST(coalesce(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0) AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS disbursed_bn
+FROM marts.fct_application f
+JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
+WHERE f.action_taken <> '6'
+  AND a.derived_sex  IN ('Male','Female','Joint')
+  AND a.derived_race IN ('White','Black or African American','Asian','Joint')
+GROUP BY 1,2 ORDER BY 1, 3 DESC, 2;
+```
 
 <table>
 <thead>
@@ -243,7 +408,34 @@ Black applicants use FHA at five times the Asian rate. Asian applicants are on a
 
 ## 9. Finding 8: the biggest market has the lowest approval rate
 
-[▶ query 09](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=09)
+Run live [▶ query 09](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=09)
+
+```sql
+-- General analysis section 7: where the lending happens.
+-- msa_md 99999 is HMDA's code for a property outside any metropolitan area, so
+-- it has no name in dim_msa and is labelled here rather than left blank.
+-- NULLS LAST is not decoration: PostgreSQL sorts NULLs first on DESC and DuckDB
+-- sorts them last, so without it the two engines return different top tens.
+SELECT CASE WHEN coalesce(m.msa_md_name, '') = ''
+            THEN 'Outside any metropolitan area' ELSE m.msa_md_name END AS area,
+       count(*)                                          AS applications,
+       round(CAST(100.0*count(*) AS DECIMAL(24,8))
+                  / CAST(sum(count(*)) OVER () AS DECIMAL(24,8)), 1) AS pct_of_state,
+       round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (
+              ORDER BY CASE WHEN f.action_taken IN ('1','2') THEN f.loan_amount END)
+             AS numeric))                                AS median_approved,
+       round(CAST(coalesce(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0) AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS disbursed_bn
+FROM marts.fct_application f
+LEFT JOIN marts.dim_msa m
+       ON m.activity_year = f.activity_year AND m.msa_md = f.msa_md
+WHERE f.action_taken <> '6'
+GROUP BY 1
+ORDER BY 2 DESC NULLS LAST, 1
+LIMIT 10;
+```
 
 | area | applications | share | approval rate | median approved | disbursed |
 |---|---|---|---|---|---|
@@ -270,7 +462,41 @@ Upstate approves far more readily, 71.7 percent in Rochester against 58.3 in New
 
 ## 10. Finding 9: income sets the size of the loan, not the multiple
 
-[▶ query 10](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=10)
+Run live [▶ query 10](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=10)
+
+```sql
+-- General analysis section 8: income against loan size.
+-- Two questions in one result: the level (what does a typical applicant at this
+-- income borrow) and the spread (how wide is the range within one income band).
+WITH d AS (
+  SELECT CASE WHEN income_thousands IS NULL THEN '6 not reported'
+              WHEN income_thousands <  50   THEN '1 under 50k'
+              WHEN income_thousands < 100   THEN '2 50-100k'
+              WHEN income_thousands < 150   THEN '3 100-150k'
+              WHEN income_thousands < 200   THEN '4 150-200k'
+              ELSE                               '5 200k and above'
+         END AS income_band, action_taken, loan_amount
+  FROM marts.fct_application
+  WHERE action_taken <> '6')
+SELECT income_band,
+       count(*)                                          AS applications,
+       round(CAST(100.0*count(*) AS DECIMAL(24,8))
+                  / CAST(sum(count(*)) OVER () AS DECIMAL(24,8)), 1) AS pct,
+       round(CAST(100.0*count(*) FILTER (WHERE action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.25) WITHIN GROUP (
+              ORDER BY CASE WHEN action_taken IN ('1','2') THEN loan_amount END)
+             AS numeric))                                AS p25_approved,
+       round(CAST(percentile_cont(0.50) WITHIN GROUP (
+              ORDER BY CASE WHEN action_taken IN ('1','2') THEN loan_amount END)
+             AS numeric))                                AS median_approved,
+       round(CAST(percentile_cont(0.75) WITHIN GROUP (
+              ORDER BY CASE WHEN action_taken IN ('1','2') THEN loan_amount END)
+             AS numeric))                                AS p75_approved,
+       round(CAST(sum(loan_amount) FILTER (WHERE action_taken = '1') AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS disbursed_bn
+FROM d GROUP BY 1 ORDER BY 1;
+```
 
 | income band | applications | share | approval rate | p25 | median | p75 | disbursed |
 |---|---|---|---|---|---|---|---|
@@ -301,7 +527,27 @@ The spread widens enormously alongside it. The middle half of the bottom band is
 
 ## 11. Finding 10: the rate environment swamps the product
 
-[▶ query 11](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=11)
+Run live [▶ query 11](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=11)
+
+```sql
+-- General analysis section 9: what borrowing costs.
+-- Restricted to 2025 and to originated loans. Both restrictions are load
+-- bearing. A rate exists only on a loan that was actually made, and the median
+-- rate moved from 4.375 percent in 2022 to 6.875 in 2024, so pooling the four
+-- years would measure the rate environment rather than the product.
+SELECT c.label                                           AS loan_purpose,
+       count(*)                                          AS loans,
+       round(CAST(avg(f.interest_rate) AS numeric), 3)    AS mean_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (ORDER BY f.interest_rate)
+             AS numeric), 3)                             AS median_rate
+FROM marts.fct_application f
+JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
+JOIN ref.ref_code c ON c.code_field = 'loan_purpose' AND c.code_value = p.loan_purpose
+WHERE f.action_taken = '1'
+  AND f.interest_rate IS NOT NULL
+  AND f.activity_year = 2025
+GROUP BY 1 ORDER BY 4, 1;
+```
 
 Originated loans only, because a rate exists only on a loan that was actually made. Coverage is **96.4 percent** of originations, stable across all four years, and the missing 3.6 percent is concentrated in exempt filers rather than spread evenly.
 
@@ -340,7 +586,29 @@ Cash-out refinancing is the row worth a second look: its median is 6.990 but its
 
 ## 12. Finding 11: more than a third of denials are one reason
 
-[▶ query 12](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=12)
+Run live [▶ query 12](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=12)
+
+```sql
+-- General analysis section 10: why applications fail.
+-- Uses marts.v_denial_reason, the labelled view, restricted to reason_ordinal 1
+-- so each denial is counted once under its primary reason. Restricted to
+-- genuinely denied applications because 21,665 originated loans also carry a
+-- denial reason, which is a filer error in the published data.
+--
+-- coalesce is not cosmetic. 31,821 denial-reason rows carry code 1111, HMDA's
+-- "Exempt" value, and ref_code has no mapping for it, so the labelled view
+-- returns NULL. Blanking it would hide 4,533 primary reasons. The gap belongs
+-- in the ref_code seed; until it is fixed the code is named here.
+SELECT coalesce(v.denial_reason, 'Exempt (code 1111, unmapped)') AS primary_reason,
+       count(*)                                          AS denials,
+       round(CAST(100.0*count(*) AS DECIMAL(24,8))
+                  / CAST(sum(count(*)) OVER () AS DECIMAL(24,8)), 1) AS pct
+FROM marts.v_denial_reason v
+JOIN marts.fct_application f
+  ON f.activity_year = v.activity_year AND f.application_sk = v.application_sk
+WHERE v.reason_ordinal = 1 AND f.action_taken = '3'
+GROUP BY 1 ORDER BY 2 DESC, 1;
+```
 
 HMDA lets a filer record up to four denial reasons. This project keeps them in a bridge table, `marts.br_denial_reason`, because flattening four optional reasons into four columns on the fact table would break first normal form. 78.3 percent of denials give one reason, 17.9 percent give two, 3.4 percent three and 0.5 percent all four.
 
