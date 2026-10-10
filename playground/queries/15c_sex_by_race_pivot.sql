@@ -1,7 +1,9 @@
--- General analysis section 12: the sex by race funnel.
--- Descriptive, not a disparity claim. The outcome gaps and what survives
--- controlling for income, product, neighbourhood and lender are in
--- docs/08b_analysis_disparity.md.
+-- Disparity analysis section 4: the sex by race funnel.
+-- This sat in the general analysis until it was moved here, which is where it
+-- belongs: the general phase describes the market, and any cut that crosses
+-- applicant race is part of the disparity question, not part of the market.
+-- Descriptive even so. What survives controlling for income, product,
+-- neighbourhood and lender is queries 16 to 25b.
 SELECT a.derived_sex, a.derived_race,
        count(*)                                          AS applications,
        count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS approved,

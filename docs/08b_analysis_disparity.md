@@ -226,6 +226,101 @@ It is also the least informative version, because it averages across groups that
 
 Either way, the number on its own is close to meaningless, because applicants differ in income, in what they are borrowing for, in where the property is and in which lender they approached. The rest of this phase is about removing those explanations one at a time.
 
+
+### 4.1 The same funnel, crossed with applicant sex
+
+This section and the two tables in it were in the general analysis until they
+were moved here. That phase describes the market; any cut that crosses applicant
+race belongs to the disparity question, which is this one.
+
+Read the denominators carefully, because they are not the ones used above.
+Section 4 reports the **denial rate among decided applications in 2025**. The
+tables here report the **approval rate across all four years, over every
+application except purchased loans**. Both are defensible and they are not
+comparable with each other. The first isolates a lender's yes or no in the
+latest year; the second describes the whole four-year funnel, withdrawals and
+incomplete files included.
+
+| applicant race | applications | share | approval rate | median approved | disbursed |
+|---|---|---|---|---|---|
+| White | 983,251 | 61.6% | 66.0% | 205,000 | 198.23bn |
+| Race not available | 299,190 | 18.7% | 56.9% | 315,000 | 98.89bn |
+| Asian | 147,339 | 9.2% | 62.1% | **455,000** | 44.13bn |
+| Black or African American | 124,980 | 7.8% | 49.5% | 255,000 | 19.63bn |
+| Joint | 27,293 | 1.7% | 68.0% | 355,000 | 8.86bn |
+| American Indian or Alaska Native | 6,829 | 0.4% | 41.9% | 165,000 | 0.67bn |
+
+Crossing the two gives the pivot.
+
+Run live [▶ query 15c](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=15c)
+
+```sql
+SELECT a.derived_sex, a.derived_race,
+       count(*)                                          AS applications,
+       count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS approved,
+       round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2')) AS DECIMAL(24,8))
+                  / CAST(count(*) AS DECIMAL(24,8)), 1)             AS approval_rate,
+       round(CAST(percentile_cont(0.5) WITHIN GROUP (
+              ORDER BY CASE WHEN f.action_taken IN ('1','2') THEN f.loan_amount END)
+             AS numeric))                                AS median_approved,
+       round(CAST(coalesce(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0) AS DECIMAL(24,4))
+             / 1000000000, 2)                             AS disbursed_bn
+FROM marts.fct_application f
+JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
+WHERE f.action_taken <> '6'
+  AND a.derived_sex  IN ('Male','Female','Joint')
+  AND a.derived_race IN ('White','Black or African American','Asian','Joint')
+GROUP BY 1,2 ORDER BY 1, 3 DESC, 2;
+```
+
+<table>
+<thead>
+<tr><th rowspan="2">applicant sex</th><th rowspan="2">race</th><th colspan="2">volume</th><th colspan="3">outcome</th></tr>
+<tr><th>applications</th><th>approved</th><th>approval rate</th><th>median approved</th><th>disbursed</th></tr>
+</thead>
+<tbody>
+<tr><td rowspan="4">Joint</td><td>White</td><td align="right">365,685</td><td align="right">263,755</td><td align="right"><b>72.1%</b></td><td align="right">235,000</td><td align="right">89.01bn</td></tr>
+<tr><td>Joint</td><td align="right">24,671</td><td align="right">16,849</td><td align="right">68.3%</td><td align="right">345,000</td><td align="right">8.05bn</td></tr>
+<tr><td>Asian</td><td align="right">41,291</td><td align="right">26,624</td><td align="right">64.5%</td><td align="right">515,000</td><td align="right">14.83bn</td></tr>
+<tr><td>Black or African American</td><td align="right">26,190</td><td align="right">14,828</td><td align="right">56.6%</td><td align="right">425,000</td><td align="right">6.02bn</td></tr>
+<tr><td rowspan="4">Female</td><td>Asian</td><td align="right">41,146</td><td align="right">26,329</td><td align="right">64.0%</td><td align="right">405,000</td><td align="right">11.29bn</td></tr>
+<tr><td>White</td><td align="right">234,089</td><td align="right">147,402</td><td align="right">63.0%</td><td align="right">165,000</td><td align="right">34.15bn</td></tr>
+<tr><td>Joint</td><td align="right">999</td><td align="right">651</td><td align="right">65.2%</td><td align="right">335,000</td><td align="right">0.26bn</td></tr>
+<tr><td>Black or African American</td><td align="right">52,701</td><td align="right">25,886</td><td align="right">49.1%</td><td align="right">225,000</td><td align="right">7.43bn</td></tr>
+<tr><td rowspan="4">Male</td><td>White</td><td align="right">377,850</td><td align="right">234,748</td><td align="right">62.1%</td><td align="right">205,000</td><td align="right">74.22bn</td></tr>
+<tr><td>Joint</td><td align="right">1,530</td><td align="right">996</td><td align="right">65.1%</td><td align="right">455,000</td><td align="right">0.53bn</td></tr>
+<tr><td>Asian</td><td align="right">64,088</td><td align="right">38,093</td><td align="right">59.4%</td><td align="right">435,000</td><td align="right">17.83bn</td></tr>
+<tr><td>Black or African American</td><td align="right">45,136</td><td align="right">20,875</td><td align="right"><b>46.2%</b></td><td align="right">215,000</td><td align="right">6.09bn</td></tr>
+</tbody>
+</table>
+
+**The range across this table is 25.9 points, from 72.1 percent to 46.2
+percent.** Two patterns run through it and they are independent of each other. A
+jointly named application is approved roughly 8 points more often than a single
+applicant of the same race, in every race group. And within each sex, the
+ordering of race is identical.
+
+**What this says.** Having two names on the application helps everyone by about
+the same amount, and it does not close the distance between groups. The sex
+effect and the group effect sit on top of one another rather than explaining one
+another.
+
+Product choice differs sharply too, and it is the mechanism behind a good deal of
+what follows:
+
+| group | conventional | FHA | VA | home purchase | subordinate lien |
+|---|---|---|---|---|---|
+| Black or African American | 78.3% | **18.6%** | 3.0% | 40.4% | 29.2% |
+| American Indian or Alaska Native | 87.1% | 8.9% | 3.7% | 37.2% | 34.5% |
+| White | 90.4% | 7.1% | 2.4% | 43.0% | 28.8% |
+| Asian | **96.0%** | 3.5% | 0.5% | **67.6%** | 15.8% |
+
+Black applicants use FHA at five times the Asian rate. Asian applicants are on a
+home purchase two thirds of the time against Black applicants two fifths. Those
+are different products with different approval rates and different prices, which
+is exactly why section 6 tests whether the gap survives holding the product
+constant.
+
 ---
 
 ## 5. Finding 4: the gap survives income

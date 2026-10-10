@@ -4,7 +4,7 @@ A PostgreSQL analytics project on 1,755,419 real mortgage applications, built fr
 
 ### ▶ [Open the playground](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/) · [Browse the data dictionary](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/catalog/) · [See the ERD](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/erd/) · [Project home](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/)
 
-The playground gives you fifteen tables, a SQL box and the thirty-two queries below, running in your browser. Nothing is installed, no account is created, and no data leaves your machine.
+The playground gives you fifteen tables, a SQL box and the thirty-six queries below, running in your browser. Nothing is installed, no account is created, and no data leaves your machine.
 
 ---
 
@@ -53,7 +53,7 @@ They are separate documents on purpose. A single document that answers both answ
 
 ---
 
-## The thirty-two questions, and the SQL that answers them
+## The thirty-six questions, and the SQL that answers them
 
 **Click a query number and the playground opens with that query loaded and already executed**, against the real 1.75 million rows, in your browser. You can then edit it and press Ctrl + Enter to try your own version.
 
@@ -61,15 +61,18 @@ They are separate documents on purpose. A single document that answers both answ
 
 | | the question | what the query returns |
 |---|---|---|
+| [00](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=00) | What is actually in this register? | 1,754,846 rows, 1,168 lenders, 5,281 census tracts, 66 counties, $371bn disbursed, and the distinct count of every applicant category. |
 | [01](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=01) | How did the market move between 2022 and 2025? | Applications fell 31% in a year and dollars 43%. Volume is back to 79% of 2022, but the approval rate dropped 2.8 points and stayed down. |
+| [01b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=01b) | How concentrated is this market? | Barely at all. The largest lender made 5.25% of originations and the ten largest made 30.7% between them. The other 1,158 made the rest. |
 | [02](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=02) | Which loan types carry this market? | 89.9% conventional. Conventional and FHA together are 97.7% of applications and sit 2.6 points apart on approval. |
 | [03](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=03) | What are people borrowing for? | Home purchase is 46% of applications and 65% of the money. Home improvement is 15.5% of applications and 4.3% of the money. |
 | [04](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=04) | Where does the loan sit in the capital stack? | A quarter is subordinate-lien, approved 12.6 points less often for a median loan a third the size. |
 | [05](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=05) | How long do these loans run? | 67.5% are 30 years or longer, and they are 78% of the money. The 15 to 30 year bands approve worst, because that is where second-lien lending sits. |
 | [06](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=06) | How big are the loans really? | The mean sits above the 60th percentile every year. In 2025 the mean is 401,264 and the median 255,000. |
 | [07](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=07) | Does age change the outcome? | Approval falls 12.7 points from 25-34 to 65-and-above, and the median loan falls from 295,000 to 155,000. The "age not provided" band turns out to be 84% companies. |
-| [08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08) | Who applies, by sex and race? | A jointly named application is approved about 8 points more often than a single applicant of the same race, in every group. |
+| [08](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=08) | Does applicant sex change the outcome? | Male and female applicants approve within 0.7 points of each other. A jointly named application approves 10.6 points above a male applicant. |
 | [09](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=09) | Where does the lending happen? | New York City is 30% of applications, 50% of the dollars, and the lowest approval rate. Ranking by volume and by dollars gives different lists. |
+| [09b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=09b) | Where is the expensive property? | All ten priciest tracts are in Suffolk County or Manhattan. The top one has a median property value of $6,415,000 across 297 loans. |
 | [10](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=10) | How does income translate into loan size? | The level rises and the multiple falls: 2.62 times income under 50k, 1.53 times over 200k. Approval stops improving above 150k. |
 | [11](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=11) | What does borrowing cost? | Within 2025, purpose spans 51 basis points and the lowest income band pays 37.5 more than the highest. Across years the environment moved 250. |
 | [12](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=12) | Why do applications fail? | Debt-to-income is 36.7% of denials, nearly as much as credit history and collateral combined. |
@@ -82,6 +85,7 @@ They are separate documents on purpose. A single document that answers both answ
 | [14](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=14) | Why does the denominator matter? | Only 54.2% of rows are originated and 18.2% denied. Every rate in the disparity analysis uses decided applications only. |
 | [15](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=15) | Do outcomes differ by group? | 2025: 22.4% for White, 24.5% for Asian, 39.6% for Black and 49.9% for Native Hawaiian or Other Pacific Islander applicants. |
 | [15b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=15b) | What is the single comparison a reader asks for? | White against all other reported races combined: 22.4% against 30.7%, an 8.3 point gap at a ratio of 1.37. Unreported race is held out of both sides. |
+| [15c](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=15c) | Does the picture change crossed with sex? | A second name is worth about 8 points in every race group, and the ordering of groups is identical within each sex. The two effects stack. |
 | [16](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=16) | Does the gap survive income? | No. Every group's rate falls as income rises and none of them converge. Above 200,000 dollars: 15.7% White against 30.2% Black. |
 | [16b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=16b) | Does the combined gap close at the top? | It narrows to 4.5 points but never closes, and it narrows because Asian and Joint applicants converge, not because the Black gap does. |
 | [17](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=17) | Was the 2023 tightening mix or behaviour? | A shift share splits the 3.65 point rise into 0.86 from mix and 2.79 from products denying more. **I predicted the opposite.** |
@@ -99,7 +103,7 @@ They are separate documents on purpose. A single document that answers both answ
 | [25](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=25) | Is the gap in price as well as access? | Yes, and wider. Median rate spread 0.441 for Black borrowers against 0.250 for White. Combining all non-White groups reverses the sign. |
 | [25b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=25b) | Is it in the headline rate too? | No. The Black and White median interest rates are identical at 6.625%. The gap is in the premium over benchmark, not in the coupon. |
 
-The SQL lives in [`playground/queries/`](playground/queries) and runs unchanged against both PostgreSQL and the browser build. A [parity test](playground/parity_test.py) executes all thirty-two against both engines, plus the three labelled views, and fails on any difference.
+The SQL lives in [`playground/queries/`](playground/queries) and runs unchanged against both PostgreSQL and the browser build. A [parity test](playground/parity_test.py) executes all thirty-six against both engines, plus the three labelled views, and fails on any difference.
 
 ---
 
@@ -179,7 +183,7 @@ Each phase ends with a table headed *what is worth defending in a review*, and e
 migrations/       000 to 009, run in order, about eight minutes end to end
 seed/             the loader scripts and one small derived CSV
 playground/       the source that builds the browser site
-playground/queries/  the thirty-two published queries
+playground/queries/  the thirty-six published queries
 catalog/          the source that builds the data dictionary
 docs/             the eleven phase documents
 docs/playground/  the published playground
