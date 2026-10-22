@@ -2,7 +2,7 @@
 
 Eight checks that run on every build, a severity model that keeps a red light meaningful, and one honest gap found by writing this document.
 
-Previous phase: [06 Transforming raw into the model](06_transforming_raw_into_the_model.md) · Next phase: [08 The analysis](08_analysis.md)
+Previous phase: [06 Transforming raw into the model](06_transforming_raw_into_the_model.md) · Next phase: [09 Performance tuning](09_performance_tuning.md) · The analysis itself is in [the README](../README.md)
 
 ---
 

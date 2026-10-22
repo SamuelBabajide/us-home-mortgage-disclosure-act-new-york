@@ -2,7 +2,7 @@
 
 Six measurements on a 1.75 million row model. Two of them show an index I built being ignored by the planner, and 125 MB of indexes that should never have existed. Both are fixed in `005_constraints_indexes.sql` and both are kept in this document.
 
-Previous phase: [08 The analysis](08_analysis.md) · Next phase: [10 The browser playground](10_playground.md)
+Previous phase: [07 Quality assertions](07_quality_assertions.md) · Next phase: [10 The browser playground](10_playground.md) · The analysis itself is in [the README](../README.md)
 
 ---
 

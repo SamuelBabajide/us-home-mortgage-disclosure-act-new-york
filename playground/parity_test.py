@@ -5,7 +5,7 @@ Parquet export in DuckDB, and fail if any answer differs.
 
 This exists because the playground's promise is specific. It is not "here is
 some SQL and here is a browser database". It is "the queries published in
-docs/08_analysis.md return the same numbers in both engines". That promise is
+the README return the same numbers in both engines". That promise is
 easy to make and easy to break silently, because the two engines disagree in
 places where neither raises an error.
 

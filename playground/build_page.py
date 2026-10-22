@@ -14,6 +14,7 @@ gh-pages branch. Pass another directory as the first argument to build elsewhere
 """
 import glob
 import json
+import re
 import os
 import pathlib
 import shutil
@@ -31,8 +32,21 @@ bootstrap = pathlib.Path("bootstrap.sql").read_text()
 files = sorted(glob.glob("parquet/*.parquet"))
 names = ["data/" + os.path.basename(f) for f in files]
 
+def query_key(path):
+    """Sort A1, A2, ... A10 rather than A1, A10, A2.
+
+    Filenames carry an identifier of a section letter, a number and an optional
+    suffix: A1, C1a, E10, F4. Sorting those as strings puts E10 and E11 ahead of
+    E1a and E2, because '1' sorts before 'a' and '0' before anything. Sorting on
+    the parsed parts puts them in the order a reader expects.
+    """
+    stem = os.path.basename(path)[:-4].split("_")[0]
+    m = re.match(r"^([A-Za-z]+)(\d+)([a-z]*)$", stem)
+    return (m.group(1).upper(), int(m.group(2)), m.group(3)) if m else ("Z", 10**6, stem)
+
+
 queries = []
-for p in sorted(glob.glob("queries/*.sql")):
+for p in sorted(glob.glob("queries/*.sql"), key=query_key):
     stem = os.path.basename(p)[:-4]
     label = stem.split("_", 1)[1].replace("_", " ")
     queries.append({"id": stem, "label": f"{stem.split('_')[0]}. {label}",

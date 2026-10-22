@@ -216,18 +216,20 @@ async function boot() {
   }
 }
 
-// #q=03 selects query 03. Some findings carry a second query that belongs to the
-// same section, numbered 17b, 18b, 21c and so on, so the identifier is digits
-// followed by an optional letter and cannot be compared as a number. Both sides
-// are normalised to lower case with leading zeros stripped, which makes #q=07,
-// #q=7, #q=17b and #q=17B all resolve. An unknown or absent value falls back to
-// the first query, so a mistyped link still gives the reader a working page.
+// #q=A1 selects query A1. An identifier is a section letter, a number, and an
+// optional suffix letter where one finding carries a pair of queries: A1, C1a,
+// E1b, F4. It cannot be compared as a number, and it cannot be compared as a
+// string either, because the files are not all written the same width. Both
+// sides are normalised to lower case with any leading zeros stripped, which
+// makes #q=A1, #q=a1, #q=a01, #q=C1a and #q=E1B all resolve to the same query.
+// An unknown or absent value falls back to the first query, so a mistyped link
+// still gives the reader a working page rather than an error.
 function normId(s) {
-  const m = String(s).trim().toLowerCase().match(/^0*(\d+)([a-z]*)$/);
-  return m ? m[1] + m[2] : '';
+  const m = String(s).trim().toLowerCase().match(/^([a-f])0*(\d+)([a-z]*)$/);
+  return m ? m[1] + m[2] + m[3] : '';
 }
 function indexForHash() {
-  const want = normId((location.hash.match(/q=([0-9]+[a-zA-Z]?)/) || [])[1] || '');
+  const want = normId((location.hash.match(/q=([a-zA-Z]?[0-9]+[a-zA-Z]?)/) || [])[1] || '');
   if (!want) return 0;
   const i = QUERIES.findIndex(q => normId(q.id.split('_')[0]) === want);
   return i < 0 ? 0 : i;
