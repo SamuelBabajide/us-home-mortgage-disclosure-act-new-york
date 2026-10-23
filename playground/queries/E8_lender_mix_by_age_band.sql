@@ -105,4 +105,4 @@ JOIN lender l ON l.lei = f.lei
 JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;

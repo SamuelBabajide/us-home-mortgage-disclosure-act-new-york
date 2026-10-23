@@ -21,7 +21,7 @@ Requires a built `hmda` database (see `../RUNBOOK.md`), Python with `duckdb`, an
 pip install duckdb --break-system-packages
 npm install                  # pins duckdb-wasm 1.28.0, see package.json
 npm run vendor               # -> vendor/  (the engine, 18 MB)
-python3 export_parquet.py    # -> parquet/  (82 MB, 19 files)
+python3 export_parquet.py    # -> parquet/  (53 MB, 19 files)
 python3 parity_test.py       # must print "all 10 queries return identical results"
 python3 build_page.py        # -> ../docs/playground/  (index.html + vendor/ + data/)
 ```

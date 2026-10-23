@@ -41,23 +41,23 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')               AS denial_reason,
        count(*)              AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'White') AS DECIMAL(24,8))
-             / CAST(max(n.apps_white) AS DECIMAL(24,8)), 2)              AS white_per_100,
+             / CAST(max(n.apps_white) AS DECIMAL(24,8)), 2)              AS white,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Black or African American') AS DECIMAL(24,8))
-             / CAST(max(n.apps_black) AS DECIMAL(24,8)), 2)              AS black_per_100,
+             / CAST(max(n.apps_black) AS DECIMAL(24,8)), 2)              AS black,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Asian') AS DECIMAL(24,8))
-             / CAST(max(n.apps_asian) AS DECIMAL(24,8)), 2)              AS asian_per_100,
+             / CAST(max(n.apps_asian) AS DECIMAL(24,8)), 2)              AS asian,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'American Indian or Alaska Native') AS DECIMAL(24,8))
-             / CAST(max(n.apps_amer_indian) AS DECIMAL(24,8)), 2)        AS amer_indian_per_100,
+             / CAST(max(n.apps_amer_indian) AS DECIMAL(24,8)), 2)        AS amer_indian,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Native Hawaiian or Other Pacific Islander') AS DECIMAL(24,8))
-             / CAST(max(n.apps_nhpi) AS DECIMAL(24,8)), 2)               AS nhpi_per_100,
+             / CAST(max(n.apps_nhpi) AS DECIMAL(24,8)), 2)               AS nhpi,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '2 or more minority races') AS DECIMAL(24,8))
-             / CAST(max(n.apps_two_or_more) AS DECIMAL(24,8)), 2)        AS two_or_more_per_100,
+             / CAST(max(n.apps_two_or_more) AS DECIMAL(24,8)), 2)        AS two_or_more,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Joint') AS DECIMAL(24,8))
-             / CAST(max(n.apps_joint) AS DECIMAL(24,8)), 2)              AS joint_per_100,
+             / CAST(max(n.apps_joint) AS DECIMAL(24,8)), 2)              AS joint,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Free Form Text Only') AS DECIMAL(24,8))
-             / CAST(max(n.apps_free_form) AS DECIMAL(24,8)), 2)          AS free_form_per_100,
+             / CAST(max(n.apps_free_form) AS DECIMAL(24,8)), 2)          AS free_form,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Race Not Available') AS DECIMAL(24,8))
-             / CAST(max(n.apps_race_not_available) AS DECIMAL(24,8)), 2) AS race_not_available_per_100
+             / CAST(max(n.apps_race_not_available) AS DECIMAL(24,8)), 2) AS race_not_available
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())

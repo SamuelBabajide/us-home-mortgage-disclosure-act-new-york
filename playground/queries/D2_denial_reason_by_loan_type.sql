@@ -36,13 +36,13 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')         AS denial_reason,
        count(*)        AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '1') AS DECIMAL(24,8))
-             / CAST(max(n.apps_conventional) AS DECIMAL(24,8)), 2) AS conventional_per_100,
+             / CAST(max(n.apps_conventional) AS DECIMAL(24,8)), 2) AS conventional,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '2') AS DECIMAL(24,8))
-             / CAST(max(n.apps_fha) AS DECIMAL(24,8)), 2)          AS fha_per_100,
+             / CAST(max(n.apps_fha) AS DECIMAL(24,8)), 2)          AS fha,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '3') AS DECIMAL(24,8))
-             / CAST(max(n.apps_va) AS DECIMAL(24,8)), 2)           AS va_per_100,
+             / CAST(max(n.apps_va) AS DECIMAL(24,8)), 2)           AS va,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '4') AS DECIMAL(24,8))
-             / CAST(max(n.apps_rhs_fsa) AS DECIMAL(24,8)), 2)      AS rhs_fsa_per_100
+             / CAST(max(n.apps_rhs_fsa) AS DECIMAL(24,8)), 2)      AS rhs_fsa
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())

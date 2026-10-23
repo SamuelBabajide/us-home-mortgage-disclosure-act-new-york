@@ -88,7 +88,7 @@
   <header>
     <h1>US HMDA 2022 to 2025 &middot; SQL Playground</h1>
     <p class="sub">
-      <b>1,754,846</b> mortgage applications from New York State, in fifteen tables,
+      <b>1,754,846</b> mortgage applications from New York State, in sixteen tables,
       running in your browser. Nothing is installed and nothing is sent to a server.
     </p>
   </header>
@@ -110,14 +110,15 @@
 
   <footer>
     <p>The engine is DuckDB compiled to WebAssembly, served from this site rather than
-    a CDN. The data is 82 MB of Parquet in nineteen files, one per table and one per
-    year of the fact table. Where the host supports HTTP range requests, as GitHub Pages
-    does, a query that touches one year fetches roughly that year's bytes rather than
-    the whole dataset.</p>
+    a CDN. The data is 53 MB of Parquet in nineteen files, one per table and one per
+    year of the fact table. All nineteen are downloaded once when the page loads and
+    held in this tab, so a query costs no network at all. Reading the files in place
+    with HTTP range requests was tried and abandoned: GitHub Pages serves them
+    gzipped, which makes a byte range address the compressed stream rather than the
+    file.</p>
     <p>Schema and view names match the PostgreSQL build exactly, so every query here
-    is the query printed in <code>docs/08_analysis.md</code> or
-    <code>docs/08b_analysis_disparity.md</code>, unedited. A parity test in the
-    repository runs all thirty-two against both engines, plus the three labelled
+    is the query printed in the project README, unedited. A parity test in the
+    repository runs all forty-two against both engines, plus the three labelled
     views, and fails on any difference.</p>
   </footer>
 </div>
@@ -172,20 +173,45 @@ async function boot() {
     const db = new duckdb.AsyncDuckDB(new duckdb.VoidLogger(), worker);
     await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
 
-    setStatus('Registering the data files…', 'loading');
+    // Each Parquet file is fetched once, in full, and handed to DuckDB as a
+    // buffer. The obvious alternative, registerFileURL with the HTTP protocol,
+    // lets DuckDB read the files itself, and on GitHub Pages it is broken:
+    // Pages serves .parquet with Content-Encoding: gzip, so the Content-Length
+    // in the HEAD response is the COMPRESSED size (23,220,636 for the 2022
+    // fact table, against 23,404,621 bytes of actual file) and a subsequent
+    // Range request addresses offsets in the compressed stream. DuckDB then
+    // computes the footer position from a total that is 184 KB short and reads
+    // bytes that are not where it thinks they are, which surfaces as
+    // "TProtocolException: Invalid data" on whichever column chunk it tried to
+    // decode. A plain fetch has none of this: the browser undoes the gzip and
+    // returns the true bytes, which is what registerFileBuffer wants.
+    //
+    // Buffering was already the intent here. Range reads were measured worse
+    // in phase 10 because DuckDB does not cache what it reads, so one
+    // year-filtered count re-fetched 142 MB. This costs the same 53 MB at
+    // startup and zero bytes per query after it, and it cannot be broken by
+    // what a host decides to do with Content-Encoding.
+    let loaded = 0;
     for (const name of FILES) {
-      // Last argument is directIO. true makes DuckDB issue HTTP range requests
-      // and read only the row groups it needs, which sounds obviously right and
-      // measured worse: it does not cache what it reads, so one year-filtered
-      // count re-fetched 142 MB. false buffers each file once, so the cost is
-      // the 82 MB download at startup and zero bytes per query after that.
-      // Phase 10 section 5 has the numbers.
-      await db.registerFileURL(name, new URL(name, location.href).href,
-                               duckdb.DuckDBDataProtocol.HTTP, false);
+      setStatus(`Loading the data files… ${loaded} of ${FILES.length}`, 'loading');
+      const url = new URL(name, location.href).href;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`);
+      const buf = new Uint8Array(await res.arrayBuffer());
+      // Parquet carries a four-byte magic at both ends. Checking it here turns a
+      // truncated or rewritten download into a clear message at load time
+      // instead of a Thrift error inside the first query that touches the file.
+      const magic = String.fromCharCode(buf[0], buf[1], buf[2], buf[3]);
+      const tail  = String.fromCharCode(...buf.slice(-4));
+      if (magic !== 'PAR1' || tail !== 'PAR1')
+        throw new Error(`${name}: not a Parquet file (${buf.length} bytes, ` +
+                        `magic ${JSON.stringify(magic)}/${JSON.stringify(tail)})`);
+      await db.registerFileBuffer(name, buf);
+      loaded += 1;
     }
+    setStatus(`Loaded ${loaded} data files. Creating the schemas and views…`, 'loading');
 
     conn = await db.connect();
-    setStatus('Creating the schemas and views…', 'loading');
     for (const stmt of BOOTSTRAP.split(/;\s*(?:\r?\n|$)/)) {
       const s = stmt.replace(/^\s*(--[^\n]*\n)+/g, '').trim();
       if (s) await conn.query(s);
@@ -204,7 +230,7 @@ async function boot() {
     sqlBox.value = QUERIES[Number(preset.value)].sql;
 
     preset.disabled = sqlBox.disabled = runBtn.disabled = false;
-    setStatus('Ready. 1,754,846 rows, 15 tables, in this tab.', 'ready');
+    setStatus('Ready. 1,754,846 rows, 16 tables and 3 labelled views, in this tab.', 'ready');
     await runQuery();
   } catch (err) {
     setStatus('The engine could not start.', 'error');
@@ -216,20 +242,18 @@ async function boot() {
   }
 }
 
-// #q=A1 selects query A1. An identifier is a section letter, a number, and an
-// optional suffix letter where one finding carries a pair of queries: A1, C1a,
-// E1b, F4. It cannot be compared as a number, and it cannot be compared as a
-// string either, because the files are not all written the same width. Both
-// sides are normalised to lower case with any leading zeros stripped, which
-// makes #q=A1, #q=a1, #q=a01, #q=C1a and #q=E1B all resolve to the same query.
-// An unknown or absent value falls back to the first query, so a mistyped link
-// still gives the reader a working page rather than an error.
+// #q=03 selects query 03. Some findings carry a second query that belongs to the
+// same section, numbered 17b, 18b, 21c and so on, so the identifier is digits
+// followed by an optional letter and cannot be compared as a number. Both sides
+// are normalised to lower case with leading zeros stripped, which makes #q=07,
+// #q=7, #q=17b and #q=17B all resolve. An unknown or absent value falls back to
+// the first query, so a mistyped link still gives the reader a working page.
 function normId(s) {
-  const m = String(s).trim().toLowerCase().match(/^([a-f])0*(\d+)([a-z]*)$/);
-  return m ? m[1] + m[2] + m[3] : '';
+  const m = String(s).trim().toLowerCase().match(/^0*(\d+)([a-z]*)$/);
+  return m ? m[1] + m[2] : '';
 }
 function indexForHash() {
-  const want = normId((location.hash.match(/q=([a-zA-Z]?[0-9]+[a-zA-Z]?)/) || [])[1] || '');
+  const want = normId((location.hash.match(/q=([0-9]+[a-zA-Z]?)/) || [])[1] || '');
   if (!want) return 0;
   const i = QUERIES.findIndex(q => normId(q.id.split('_')[0]) === want);
   return i < 0 ? 0 : i;

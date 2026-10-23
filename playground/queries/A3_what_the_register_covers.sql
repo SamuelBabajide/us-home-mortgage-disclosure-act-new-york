@@ -19,13 +19,13 @@ d AS (SELECT count(DISTINCT derived_sex)  AS sex_values,
 SELECT v.ord, v.metric, v.value
 FROM f, p, d,
 LATERAL (VALUES
-  (1, 'years covered',           CAST(f.years_covered  AS BIGINT)),
-  (2, 'distinct lenders',        CAST(f.lenders        AS BIGINT)),
-  (3, 'distinct New York counties', CAST(f.ny_counties AS BIGINT)),
-  (4, 'distinct census tracts',  CAST(f.tracts         AS BIGINT)),
-  (5, 'distinct loan types',     CAST(p.loan_types     AS BIGINT)),
-  (6, 'distinct loan purposes',  CAST(p.loan_purposes  AS BIGINT)),
-  (7, 'distinct sex values',     CAST(d.sex_values     AS BIGINT)),
-  (8, 'distinct race values',    CAST(d.race_values    AS BIGINT))
+  (1, 'Years covered',           CAST(f.years_covered  AS BIGINT)),
+  (2, 'Distinct lenders',        CAST(f.lenders        AS BIGINT)),
+  (3, 'Distinct New York counties', CAST(f.ny_counties AS BIGINT)),
+  (4, 'Distinct census tracts',  CAST(f.tracts         AS BIGINT)),
+  (5, 'Distinct loan types',     CAST(p.loan_types     AS BIGINT)),
+  (6, 'Distinct loan purposes',  CAST(p.loan_purposes  AS BIGINT)),
+  (7, 'Distinct sex values',     CAST(d.sex_values     AS BIGINT)),
+  (8, 'Distinct race values',    CAST(d.race_values    AS BIGINT))
 ) AS v(ord, metric, value)
 ORDER BY v.ord;

@@ -37,13 +37,13 @@ SELECT l.purpose,
        count(*)                                                           AS lenders_active,
        count(*) FILTER (WHERE r.apps >= 500)                              AS lenders_rankable,
        round(CAST(percentile_disc(0.10) WITHIN GROUP (
-              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS numeric), 2)
+              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS DECIMAL(24,8)), 2)
                                                                           AS p10_lender_denial_rate,
        round(CAST(percentile_disc(0.50) WITHIN GROUP (
-              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS numeric), 2)
+              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS DECIMAL(24,8)), 2)
                                                                           AS median_lender_denial_rate,
        round(CAST(percentile_disc(0.90) WITHIN GROUP (
-              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS numeric), 2)
+              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS DECIMAL(24,8)), 2)
                                                                           AS p90_lender_denial_rate
 FROM rate r
 JOIN purpose_label l ON l.loan_purpose = r.loan_purpose

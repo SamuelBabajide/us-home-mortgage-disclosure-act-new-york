@@ -40,21 +40,21 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')             AS denial_reason,
        count(*)            AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '<25') AS DECIMAL(24,8))
-             / CAST(max(n.apps_under_25) AS DECIMAL(24,8)), 2)         AS under_25_per_100,
+             / CAST(max(n.apps_under_25) AS DECIMAL(24,8)), 2)         AS under_25,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '25-34') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_25_to_34) AS DECIMAL(24,8)), 2)     AS age_25_to_34_per_100,
+             / CAST(max(n.apps_age_25_to_34) AS DECIMAL(24,8)), 2)     AS age_25_to_34,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '35-44') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_35_to_44) AS DECIMAL(24,8)), 2)     AS age_35_to_44_per_100,
+             / CAST(max(n.apps_age_35_to_44) AS DECIMAL(24,8)), 2)     AS age_35_to_44,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '45-54') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_45_to_54) AS DECIMAL(24,8)), 2)     AS age_45_to_54_per_100,
+             / CAST(max(n.apps_age_45_to_54) AS DECIMAL(24,8)), 2)     AS age_45_to_54,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '55-64') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_55_to_64) AS DECIMAL(24,8)), 2)     AS age_55_to_64_per_100,
+             / CAST(max(n.apps_age_55_to_64) AS DECIMAL(24,8)), 2)     AS age_55_to_64,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '65-74') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_65_to_74) AS DECIMAL(24,8)), 2)     AS age_65_to_74_per_100,
+             / CAST(max(n.apps_age_65_to_74) AS DECIMAL(24,8)), 2)     AS age_65_to_74,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '>74') AS DECIMAL(24,8))
-             / CAST(max(n.apps_over_74) AS DECIMAL(24,8)), 2)          AS over_74_per_100,
+             / CAST(max(n.apps_over_74) AS DECIMAL(24,8)), 2)          AS over_74,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '8888') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_not_provided) AS DECIMAL(24,8)), 2) AS age_not_provided_per_100
+             / CAST(max(n.apps_age_not_provided) AS DECIMAL(24,8)), 2) AS age_not_provided
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())

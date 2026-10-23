@@ -25,7 +25,7 @@ SELECT r.label                                                              AS l
                                                                            AS pct_of_originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.loan_amount END)
-             AS numeric))                                                  AS median_loan_amount,
+             AS DECIMAL(24,8)))                                             AS median_loan_amount,
        COALESCE(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0)  AS total_loan_amount
 FROM marts.fct_application f
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk

@@ -110,21 +110,21 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')                AS denial_reason,
        count(*)               AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 1) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_under_50k) AS DECIMAL(24,8)), 2)           AS inc_under_50k_per_100,
+             / CAST(max(n.apps_inc_under_50k) AS DECIMAL(24,8)), 2)           AS inc_under_50k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 2) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_50k_to_74k) AS DECIMAL(24,8)), 2)          AS inc_50k_to_74k_per_100,
+             / CAST(max(n.apps_inc_50k_to_74k) AS DECIMAL(24,8)), 2)          AS inc_50k_to_74k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 3) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_75k_to_99k) AS DECIMAL(24,8)), 2)          AS inc_75k_to_99k_per_100,
+             / CAST(max(n.apps_inc_75k_to_99k) AS DECIMAL(24,8)), 2)          AS inc_75k_to_99k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 4) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_100k_to_149k) AS DECIMAL(24,8)), 2)        AS inc_100k_to_149k_per_100,
+             / CAST(max(n.apps_inc_100k_to_149k) AS DECIMAL(24,8)), 2)        AS inc_100k_to_149k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 5) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_150k_to_199k) AS DECIMAL(24,8)), 2)        AS inc_150k_to_199k_per_100,
+             / CAST(max(n.apps_inc_150k_to_199k) AS DECIMAL(24,8)), 2)        AS inc_150k_to_199k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 6) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_200k_to_299k) AS DECIMAL(24,8)), 2)        AS inc_200k_to_299k_per_100,
+             / CAST(max(n.apps_inc_200k_to_299k) AS DECIMAL(24,8)), 2)        AS inc_200k_to_299k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 7) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_300k_and_over) AS DECIMAL(24,8)), 2)       AS inc_300k_and_over_per_100,
+             / CAST(max(n.apps_inc_300k_and_over) AS DECIMAL(24,8)), 2)       AS inc_300k_and_over,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 8) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_not_reported) AS DECIMAL(24,8)), 2) AS inc_not_reported_per_100
+             / CAST(max(n.apps_inc_not_reported) AS DECIMAL(24,8)), 2) AS inc_not_reported
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())

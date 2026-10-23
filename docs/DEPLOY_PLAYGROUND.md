@@ -163,18 +163,21 @@ This takes about two minutes. It dumps each table to a temporary CSV, reads it b
 Expected output, ending with these lines:
 
 ```
-fct_application_2022                22,838 kB
-fct_application_2023                16,148 kB
-fct_application_2024                15,831 kB
-fct_application_2025                17,646 kB
-total                                   82 MB
+fct_application_2022                13,536 kB
+fct_application_2023                 9,486 kB
+fct_application_2024                 9,319 kB
+fct_application_2025                10,344 kB
+total                                   52 MB
 
 type fidelity check: action_taken IN ('1','3') matched 283,192 rows
+held back from the export: marts.fct_application.row_hash
 ```
 
 **About one institution name.** Four rows of `dim_institution`, all the same Puerto Rican credit union, contain the Unicode replacement character, left over from an encoding problem in the publisher's own transmittal sheet. The export forces UTF8 so those rows come through rather than stopping the dump. They will show a replacement glyph in the playground, which is the honest representation of what the source file contains.
 
-**Check two things before moving on.** The total should be about 82 MB. And the last line must say 283,192, which is the number of decided applications in 2024 in your PostgreSQL database. If it says 0, the code columns came back as numbers instead of text and every query in the browser would fail. Stop and see section 12.
+**Check three things before moving on.** The total should be about 52 MB. The type fidelity line must say 283,192, which is the number of decided applications in 2024 in your PostgreSQL database; if it says 0, the code columns came back as numbers instead of text and every query in the browser would fail, so stop and see section 12. And the last line must name `row_hash`, which is the column held back from the export.
+
+**Why 52 MB and not 82 MB.** `row_hash` was 42 percent of the fact-table export, 30.5 MB of hex digest that no query in the browser can read. It stays in PostgreSQL, where the surrogate key and the uniqueness assertion both depend on it, and it is held back from the Parquet in `EXCLUDE` at the top of `export_parquet.py`. The script checks afterwards that no exported file still carries it, so a silent regression here fails the export rather than inflating the download. Phase 10 section 5a has the measurement.
 
 ---
 
@@ -301,7 +304,7 @@ Leave that running. Open a browser at:
 http://localhost:8000/
 ```
 
-You should see the page, a green dot, and "Ready. 1,754,846 rows, 15 tables, in this tab." within a few seconds, with the first query's results already on screen:
+You should see the page, a green dot, and "Ready. 1,754,846 rows, 16 tables and 3 labelled views, in this tab." within a few seconds, with the first query's results already on screen:
 
 | activity_year | decided | denial_pct |
 |---|---|---|
@@ -492,7 +495,9 @@ GitHub Pages redeploys on its own within a minute or two. **The URL never change
 
 ### Why most updates cost almost nothing
 
-`build_page.py` rewrites the whole `docs/playground` folder every time, including all 82 MB of `data/`. That sounds expensive and is not, because git tracks content rather than timestamps, and the export is deterministic: re-running `export_parquet.py` against an unchanged database produces **byte-identical Parquet**, verified across all nineteen files. Git sees no change and stores nothing new, so a wording tweak on the page really does push 24 kB.
+`build_page.py` rewrites the whole `docs/playground` folder every time, including all 52 MB of `data/`. That sounds expensive and is not, because git tracks content rather than timestamps, and the export is deterministic: re-running `export_parquet.py` against an unchanged database produces **byte-identical Parquet**, verified across all nineteen files. Git sees no change and stores nothing new, so a wording tweak on the page really does push 24 kB.
+
+Byte identity holds for a given DuckDB version. The four fact files currently in `docs/playground/data` were produced by rewriting the previous export to drop `row_hash`, not by a fresh run of `export_parquet.py`, so the next full export will rewrite them once and then be stable again. Their contents are identical to what the patched script produces: same columns in the same order, same types, same row counts, and all forty-two queries verified against them.
 
 That determinism is the same property the phase 06 key design was built for, showing up somewhere it was not designed for.
 
@@ -500,7 +505,7 @@ One caveat worth knowing rather than discovering. The export has no `ORDER BY`, 
 
 ### The one genuine cost
 
-When data really does change, git keeps the old version forever. Re-exporting after a full model rebuild can add up to 82 MB to the repository's history, and that space is never reclaimed by a later commit. Two or three rebuilds are fine. Twenty would make the repository unpleasant to clone.
+When data really does change, git keeps the old version forever. Re-exporting after a full model rebuild can add up to 52 MB to the repository's history, and that space is never reclaimed by a later commit. Two or three rebuilds are fine. Twenty would make the repository unpleasant to clone.
 
 So: rebuild the model as often as you like locally, and re-export only when you intend to publish the result.
 

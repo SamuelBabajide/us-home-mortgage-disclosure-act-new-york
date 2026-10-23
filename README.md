@@ -1,6 +1,6 @@
-# Mortgage lending in New York, 2022 to 2025
+# Mortgage Lending in New York, 2022 to 2025
 
-**[Open the playground](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/)** · **[Browse the data dictionary](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/catalog/)** · **[See the ERD](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/erd/)** · **[Project home](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/)**
+**[Open the Playground](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/)** · **[Browse the Data Dictionary](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/catalog/)** · **[See the ERD](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/erd/)** · **[Project Home](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/)**
 
 1,596,676 mortgage applications filed in New York State between 2022 and 2025
 under the US Home Mortgage Disclosure Act, modelled into a dimensional warehouse
@@ -12,21 +12,21 @@ data: 1.75 million rows, no install, no account, nothing sent to a server.
 
 ## Contents
 
-- [How to read this page](#how-to-read-this-page)
-- [A. Mortgage market overview](#a-mortgage-market-overview) · seven queries
-- [B. Mortgage market trends, year on year](#b-mortgage-market-trends-year-on-year) · two queries
-- [C. Applicant demographics: affordability and borrowing](#c-applicant-demographics-affordability-and-borrowing) · eleven queries
-- [D. Mortgage denial analysis](#d-mortgage-denial-analysis) · six queries
-- [E. Lender performance](#e-lender-performance) · twelve queries
+- [How to Read This Page](#how-to-read-this-page)
+- [A. Mortgage Market Overview](#a-mortgage-market-overview) · seven queries
+- [B. Mortgage Market Trends, Year on Year](#b-mortgage-market-trends-year-on-year) · two queries
+- [C. Applicant Demographics: Affordability and Borrowing](#c-applicant-demographics-affordability-and-borrowing) · eleven queries
+- [D. Mortgage Denial Analysis](#d-mortgage-denial-analysis) · six queries
+- [E. Lender Performance](#e-lender-performance) · twelve queries
 - [F. Recommendations](#f-recommendations) · four queries
-- [The data model](#the-data-model)
-- [Where the data comes from](#where-the-data-comes-from)
-- [How the numbers are checked](#how-the-numbers-are-checked)
+- [The Data Model](#the-data-model)
+- [Where the Data Comes From](#where-the-data-comes-from)
+- [How the Numbers Are Checked](#how-the-numbers-are-checked)
 - [Author](#author)
 
 ---
 
-## How to read this page
+## How to Read This Page
 
 Each section below is collapsed. Open the one you want. Inside, every query
 carries its result, its SQL and a short reading of what the result says, and the
@@ -70,7 +70,7 @@ it.
 
 ---
 
-## A. Mortgage market overview
+## A. Mortgage Market Overview
 
 <details>
 <summary><b>Seven queries: overall market KPIs, then what the register covers by loan type, purpose and geography</b></summary>
@@ -83,14 +83,14 @@ Every other section on this page reconciles to A1. If a table's counts sum to
 1,596,676 applications, 951,371 originated loans and 371,417,740,000 dollars,
 it is covering the same population.
 
-### A1. Volume, money and how applications end
+### A1. Volume, Money and How Applications End
 
 | total_applications | total_originated_loans | total_loan_amount | approval_rate | denial_rate | incomplete_rate | withdrawal_rate |
 |---|---|---|---|---|---|---|
 | 1,596,676 | 951,371 | 371,417,740,000 | 62.85 | 20.09 | 4.92 | 12.14 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A1">Query A1</a></summary>
 
 ```sql
 -- A1. Overall market KPIs: volume, money and how applications end.
@@ -114,8 +114,6 @@ FROM a;
 
 </details>
 
-[Run live query A1](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A1)
-
 Total applications counts every application filed with a New York lender between
 2022 and 2025, purchased loans excluded. Total originated loans counts those that
 became a loan: the lender approved it **and** the applicant took it.
@@ -136,14 +134,14 @@ That last group is carried through every table on this page. It is a quarter the
 size of the denial rate, and an analysis that looks only at approvals and denials
 never sees it.
 
-### A2. The typical loan that was made
+### A2. The Typical Loan That Was Made
 
 | originated_loans | median_applicant_income | median_property_value | median_loan_amount | median_loan_to_value | median_loan_to_income | median_interest_rate |
 |---|---|---|---|---|---|---|
 | 951,371 | 127,000 | 475,000 | 245,000 | 75.00 | 1.96 | 6.281 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A2">Query A2</a></summary>
 
 ```sql
 -- A2. Overall market KPIs: the typical loan that was actually made.
@@ -155,26 +153,24 @@ SELECT count(*)                                                        AS origin
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN income_thousands > 0
                             THEN income_thousands * 1000 END)
-             AS numeric))                                              AS median_applicant_income,
+             AS DECIMAL(24,8)))                                              AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY property_value)
-             AS numeric))                                              AS median_property_value,
+             AS DECIMAL(24,8)))                                              AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY loan_amount)
-             AS numeric))                                              AS median_loan_amount,
+             AS DECIMAL(24,8)))                                              AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY loan_to_value_ratio)
-             AS numeric), 2)                                           AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                           AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN income_thousands > 0
                             THEN loan_amount / (income_thousands * 1000) END)
-             AS numeric), 2)                                           AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                           AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY interest_rate)
-             AS numeric), 3)                                           AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                           AS median_interest_rate
 FROM marts.fct_application
 WHERE action_taken = '1';
 ```
 
 </details>
-
-[Run live query A2](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A2)
 
 Originated loans only. A denied application has no interest rate, usually no
 agreed amount and often no property value, so a median taken across every
@@ -201,21 +197,21 @@ Median interest rate is pooled across four years in which the market median move
 237.5 basis points. [B2](#b2-the-typical-loan-that-was-made-by-year) is where
 that pooling is unpacked, and no rate on this page is read without it.
 
-### A3. What the register covers
+### A3. What the Register Covers
 
 | ord | metric | value |
 |---|---|---|
-| 1 | years covered | 4 |
-| 2 | distinct lenders | 1,168 |
-| 3 | distinct New York counties | 62 |
-| 4 | distinct census tracts | 5,281 |
-| 5 | distinct loan types | 4 |
-| 6 | distinct loan purposes | 6 |
-| 7 | distinct sex values | 4 |
-| 8 | distinct race values | 9 |
+| 1 | Years covered | 4 |
+| 2 | Distinct lenders | 1,168 |
+| 3 | Distinct New York counties | 62 |
+| 4 | Distinct census tracts | 5,281 |
+| 5 | Distinct loan types | 4 |
+| 6 | Distinct loan purposes | 6 |
+| 7 | Distinct sex values | 4 |
+| 8 | Distinct race values | 9 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A3">Query A3</a></summary>
 
 ```sql
 -- A3. Dataset coverage: how much of what this register contains.
@@ -239,21 +235,19 @@ d AS (SELECT count(DISTINCT derived_sex)  AS sex_values,
 SELECT v.ord, v.metric, v.value
 FROM f, p, d,
 LATERAL (VALUES
-  (1, 'years covered',           CAST(f.years_covered  AS BIGINT)),
-  (2, 'distinct lenders',        CAST(f.lenders        AS BIGINT)),
-  (3, 'distinct New York counties', CAST(f.ny_counties AS BIGINT)),
-  (4, 'distinct census tracts',  CAST(f.tracts         AS BIGINT)),
-  (5, 'distinct loan types',     CAST(p.loan_types     AS BIGINT)),
-  (6, 'distinct loan purposes',  CAST(p.loan_purposes  AS BIGINT)),
-  (7, 'distinct sex values',     CAST(d.sex_values     AS BIGINT)),
-  (8, 'distinct race values',    CAST(d.race_values    AS BIGINT))
+  (1, 'Years covered',           CAST(f.years_covered  AS BIGINT)),
+  (2, 'Distinct lenders',        CAST(f.lenders        AS BIGINT)),
+  (3, 'Distinct New York counties', CAST(f.ny_counties AS BIGINT)),
+  (4, 'Distinct census tracts',  CAST(f.tracts         AS BIGINT)),
+  (5, 'Distinct loan types',     CAST(p.loan_types     AS BIGINT)),
+  (6, 'Distinct loan purposes',  CAST(p.loan_purposes  AS BIGINT)),
+  (7, 'Distinct sex values',     CAST(d.sex_values     AS BIGINT)),
+  (8, 'Distinct race values',    CAST(d.race_values    AS BIGINT))
 ) AS v(ord, metric, value)
 ORDER BY v.ord;
 ```
 
 </details>
-
-[Run live query A3](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A3)
 
 Years covered is the number of distinct filing years. 2022 is a three-year file,
 2023 and 2024 are one-year files and 2025 is the provisional vintage, so the four
@@ -277,7 +271,7 @@ Four loan types and six loan purposes are the regulator's full sets, and
 [A4](#a4-market-profile-by-loan-type) and
 [A5](#a5-market-profile-by-loan-purpose) break the market down by each.
 
-### A4. Market profile by loan type
+### A4. Market Profile by Loan Type
 
 | loan_type | total_applications | pct_of_applications | originated_loans | pct_of_originated_loans | median_loan_amount | total_loan_amount |
 |---|---|---|---|---|---|---|
@@ -287,7 +281,7 @@ Four loan types and six loan purposes are the regulator's full sets, and
 | USDA Rural Housing Service or Farm Service Agency guaranteed (RHS or FSA) | 1,930 | 0.12 | 1,356 | 0.14 | 145,000 | 202,750,000 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A4">Query A4</a></summary>
 
 ```sql
 -- Market profile by loan type.
@@ -317,7 +311,7 @@ SELECT r.label                                                              AS l
                                                                            AS pct_of_originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.loan_amount END)
-             AS numeric))                                                  AS median_loan_amount,
+             AS DECIMAL(24,8)))                                                  AS median_loan_amount,
        COALESCE(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0)  AS total_loan_amount
 FROM marts.fct_application f
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
@@ -330,8 +324,6 @@ ORDER BY 2 DESC;
 ```
 
 </details>
-
-[Run live query A4](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A4)
 
 **Two share columns, and the pair is the point.** Share of applications is what
 the market asked for; share of originated loans is what it made. They differ by
@@ -349,7 +341,7 @@ holds 91.1 percent of the dollars on 90.12 percent of the loans. USDA lending is
 0.12 percent of applications with a median loan of 145,000, the smallest of the
 four.
 
-### A5. Market profile by loan purpose
+### A5. Market Profile by Loan Purpose
 
 | loan_purpose | total_applications | pct_of_applications | originated_loans | pct_of_originated_loans | median_loan_amount | total_loan_amount |
 |---|---|---|---|---|---|---|
@@ -361,7 +353,7 @@ four.
 | Not applicable | 238 | 0.01 | 139 | 0.01 | 205,000 | 91,825,000 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A5">Query A5</a></summary>
 
 ```sql
 -- Market profile by loan purpose.
@@ -388,7 +380,7 @@ SELECT r.label                                                              AS l
                                                                            AS pct_of_originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.loan_amount END)
-             AS numeric))                                                  AS median_loan_amount,
+             AS DECIMAL(24,8)))                                                  AS median_loan_amount,
        COALESCE(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0)  AS total_loan_amount
 FROM marts.fct_application f
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
@@ -401,8 +393,6 @@ ORDER BY 2 DESC;
 ```
 
 </details>
-
-[Run live query A5](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A5)
 
 **Here the two share columns come apart, and the gap is the most useful thing in
 the table.** Home purchase is 45.92 percent of applications and 53.31 percent of
@@ -426,7 +416,7 @@ the median home improvement loan 85,000, a factor of four, so home improvement i
 percent of loans and everything else is the other 46.69, which is worth holding
 in mind before reading any table that mixes purposes together.
 
-### A6. The ten most expensive census tracts
+### A6. The Ten Most Expensive Census Tracts
 
 | census_tract | county_name | originated_loans | median_property_value | median_loan_amount | median_applicant_income |
 |---|---|---|---|---|---|
@@ -442,26 +432,96 @@ in mind before reading any table that mixes purposes together.
 | 36061004900 | New York County | 197 | 3,705,000 | 1,755,000 | 645,000 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A6">Query A6</a></summary>
 
 ```sql
--- A4. The ten most expensive census tracts, by the price of the property bought.
+-- A6. The ten most expensive census tracts, by the price of the property bought.
 -- Property value rather than loan amount: a large loan in a cheap area and a
 -- small loan in an expensive one are indistinguishable on loan size alone.
 -- Originated loans only, since a valuation exists on a loan that completed.
 -- A tract code carries its county in the first five digits, which is how the
 -- county name is joined without going through the fact table's own county code.
+-- The register stores a county FIPS code and never a county name, so the 62 New
+-- York names are supplied inline rather than joined from a reference table.
+-- That is deliberate: it is a fixed, published list that cannot drift, it keeps
+-- the query runnable anywhere the fact table is, and it puts the mapping in
+-- front of the reader instead of behind a join. All 62 codes match, which is
+-- also the check that the restriction to codes beginning 36 is complete.
+WITH county (county_code, county_name) AS (
+    VALUES ('36001', 'Albany County'),
+           ('36003', 'Allegany County'),
+           ('36005', 'Bronx County'),
+           ('36007', 'Broome County'),
+           ('36009', 'Cattaraugus County'),
+           ('36011', 'Cayuga County'),
+           ('36013', 'Chautauqua County'),
+           ('36015', 'Chemung County'),
+           ('36017', 'Chenango County'),
+           ('36019', 'Clinton County'),
+           ('36021', 'Columbia County'),
+           ('36023', 'Cortland County'),
+           ('36025', 'Delaware County'),
+           ('36027', 'Dutchess County'),
+           ('36029', 'Erie County'),
+           ('36031', 'Essex County'),
+           ('36033', 'Franklin County'),
+           ('36035', 'Fulton County'),
+           ('36037', 'Genesee County'),
+           ('36039', 'Greene County'),
+           ('36041', 'Hamilton County'),
+           ('36043', 'Herkimer County'),
+           ('36045', 'Jefferson County'),
+           ('36047', 'Kings County'),
+           ('36049', 'Lewis County'),
+           ('36051', 'Livingston County'),
+           ('36053', 'Madison County'),
+           ('36055', 'Monroe County'),
+           ('36057', 'Montgomery County'),
+           ('36059', 'Nassau County'),
+           ('36061', 'New York County'),
+           ('36063', 'Niagara County'),
+           ('36065', 'Oneida County'),
+           ('36067', 'Onondaga County'),
+           ('36069', 'Ontario County'),
+           ('36071', 'Orange County'),
+           ('36073', 'Orleans County'),
+           ('36075', 'Oswego County'),
+           ('36077', 'Otsego County'),
+           ('36079', 'Putnam County'),
+           ('36081', 'Queens County'),
+           ('36083', 'Rensselaer County'),
+           ('36085', 'Richmond County'),
+           ('36087', 'Rockland County'),
+           ('36089', 'St. Lawrence County'),
+           ('36091', 'Saratoga County'),
+           ('36093', 'Schenectady County'),
+           ('36095', 'Schoharie County'),
+           ('36097', 'Schuyler County'),
+           ('36099', 'Seneca County'),
+           ('36101', 'Steuben County'),
+           ('36103', 'Suffolk County'),
+           ('36105', 'Sullivan County'),
+           ('36107', 'Tioga County'),
+           ('36109', 'Tompkins County'),
+           ('36111', 'Ulster County'),
+           ('36113', 'Warren County'),
+           ('36115', 'Washington County'),
+           ('36117', 'Wayne County'),
+           ('36119', 'Westchester County'),
+           ('36121', 'Wyoming County'),
+           ('36123', 'Yates County')
+)
 SELECT f.census_tract,
        c.county_name,
        count(*)                                                      AS originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.property_value)
-             AS numeric))                                            AS median_property_value,
+             AS DECIMAL(24,8)))                                            AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_amount)
-             AS numeric))                                            AS median_loan_amount,
+             AS DECIMAL(24,8)))                                            AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.income_thousands * 1000)
-             AS numeric))                                            AS median_applicant_income
+             AS DECIMAL(24,8)))                                            AS median_applicant_income
 FROM marts.fct_application f
-LEFT JOIN ref.ref_county c ON c.county_code = left(f.census_tract, 5)
+LEFT JOIN county c ON c.county_code = left(f.census_tract, 5)
 WHERE f.action_taken = '1'
   AND f.property_value IS NOT NULL
   AND f.census_tract <> 'UNKNOWN'
@@ -472,8 +532,6 @@ LIMIT 10;
 ```
 
 </details>
-
-[Run live query A6](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A6)
 
 A census tract is a neighbourhood of a few thousand people, and it is the finest
 geography HMDA publishes. Ranked here by median property value on originated
@@ -488,7 +546,7 @@ Suffolk County appears repeatedly, which is the Hamptons. The top tract records 
 median property value of 6,415,000 dollars across 297 originated loans, thirteen
 times the state median of 475,000.
 
-### A7. The ten most expensive counties
+### A7. The Ten Most Expensive Counties
 
 | county_name | county_code | originated_loans | median_property_value | median_loan_amount | median_applicant_income |
 |---|---|---|---|---|---|
@@ -504,36 +562,103 @@ times the state median of 475,000.
 | Putnam County | 36079 | 7,099 | 525,000 | 295,000 | 148,000 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A7">Query A7</a></summary>
 
 ```sql
--- A5. The ten most expensive counties, by the price of the property bought.
--- The same measure as A4, one level up. A county needs 500 originated loans to
+-- A7. The ten most expensive counties, by the price of the property bought.
+-- The same measure as A6, one level up. A county needs 500 originated loans to
 -- appear, so the ranking is not decided by a handful of large sales in a small
--- county. County names come from ref.ref_county, a 62-row reference table of
--- New York county FIPS codes; the register also carries an UNKNOWN code and
--- three out-of-state codes totalling four rows, which fall out of the join.
+-- county. The register also carries an UNKNOWN county code and three
+-- out-of-state codes totalling four rows, which fall out of the join.
+-- The register stores a county FIPS code and never a county name, so the 62 New
+-- York names are supplied inline rather than joined from a reference table.
+-- That is deliberate: it is a fixed, published list that cannot drift, it keeps
+-- the query runnable anywhere the fact table is, and it puts the mapping in
+-- front of the reader instead of behind a join. All 62 codes match, which is
+-- also the check that the restriction to codes beginning 36 is complete.
+WITH county (county_code, county_name) AS (
+    VALUES ('36001', 'Albany County'),
+           ('36003', 'Allegany County'),
+           ('36005', 'Bronx County'),
+           ('36007', 'Broome County'),
+           ('36009', 'Cattaraugus County'),
+           ('36011', 'Cayuga County'),
+           ('36013', 'Chautauqua County'),
+           ('36015', 'Chemung County'),
+           ('36017', 'Chenango County'),
+           ('36019', 'Clinton County'),
+           ('36021', 'Columbia County'),
+           ('36023', 'Cortland County'),
+           ('36025', 'Delaware County'),
+           ('36027', 'Dutchess County'),
+           ('36029', 'Erie County'),
+           ('36031', 'Essex County'),
+           ('36033', 'Franklin County'),
+           ('36035', 'Fulton County'),
+           ('36037', 'Genesee County'),
+           ('36039', 'Greene County'),
+           ('36041', 'Hamilton County'),
+           ('36043', 'Herkimer County'),
+           ('36045', 'Jefferson County'),
+           ('36047', 'Kings County'),
+           ('36049', 'Lewis County'),
+           ('36051', 'Livingston County'),
+           ('36053', 'Madison County'),
+           ('36055', 'Monroe County'),
+           ('36057', 'Montgomery County'),
+           ('36059', 'Nassau County'),
+           ('36061', 'New York County'),
+           ('36063', 'Niagara County'),
+           ('36065', 'Oneida County'),
+           ('36067', 'Onondaga County'),
+           ('36069', 'Ontario County'),
+           ('36071', 'Orange County'),
+           ('36073', 'Orleans County'),
+           ('36075', 'Oswego County'),
+           ('36077', 'Otsego County'),
+           ('36079', 'Putnam County'),
+           ('36081', 'Queens County'),
+           ('36083', 'Rensselaer County'),
+           ('36085', 'Richmond County'),
+           ('36087', 'Rockland County'),
+           ('36089', 'St. Lawrence County'),
+           ('36091', 'Saratoga County'),
+           ('36093', 'Schenectady County'),
+           ('36095', 'Schoharie County'),
+           ('36097', 'Schuyler County'),
+           ('36099', 'Seneca County'),
+           ('36101', 'Steuben County'),
+           ('36103', 'Suffolk County'),
+           ('36105', 'Sullivan County'),
+           ('36107', 'Tioga County'),
+           ('36109', 'Tompkins County'),
+           ('36111', 'Ulster County'),
+           ('36113', 'Warren County'),
+           ('36115', 'Washington County'),
+           ('36117', 'Wayne County'),
+           ('36119', 'Westchester County'),
+           ('36121', 'Wyoming County'),
+           ('36123', 'Yates County')
+)
 SELECT c.county_name,
        f.county_code,
        count(*)                                                      AS originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.property_value)
-             AS numeric))                                            AS median_property_value,
+             AS DECIMAL(24,8)))                                            AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_amount)
-             AS numeric))                                            AS median_loan_amount,
+             AS DECIMAL(24,8)))                                            AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.income_thousands * 1000)
-             AS numeric))                                            AS median_applicant_income
+             AS DECIMAL(24,8)))                                            AS median_applicant_income
 FROM marts.fct_application f
-JOIN ref.ref_county c ON c.county_code = f.county_code
+JOIN county c ON c.county_code = f.county_code
 WHERE f.action_taken = '1' AND f.property_value IS NOT NULL
 GROUP BY 1, 2
 HAVING count(*) >= 500
-ORDER BY 4 DESC, 1
+ORDER BY 4 DESC, 2
 LIMIT 10;
 ```
 
 </details>
-
-[Run live query A7](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A7)
 
 The same measure one level up. 62 counties, no volume floor needed, since the
 smallest county in the state still carries enough loans for a stable median.
@@ -551,7 +676,7 @@ groups without holding location constant is partly reading this map:
 
 ---
 
-## B. Mortgage market trends, year on year
+## B. Mortgage Market Trends, Year on Year
 
 <details>
 <summary><b>Two queries: volume and money by year, and the loan profile by year</b></summary>
@@ -564,7 +689,7 @@ rests on 2025 alone.
 These two queries are A1 and A2 cut by year, deliberately, so the market totals
 and the yearly series cannot disagree.
 
-### B1. Volume, money and how applications end, by year
+### B1. Volume, Money and How Applications End, by Year
 
 | activity_year | total_applications | total_originated_loans | total_loan_amount | approval_rate | denial_rate | incomplete_rate | withdrawal_rate |
 |---|---|---|---|---|---|---|---|
@@ -574,7 +699,7 @@ and the yearly series cannot disagree.
 | 2,025 | 393,931 | 232,233 | 93,310,010,000 | 62.71 | 19.63 | 5.53 | 12.13 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=B1">Query B1</a></summary>
 
 ```sql
 -- B1. Market trend: volume, money and how applications end, by filing year.
@@ -601,8 +726,6 @@ ORDER BY 1;
 
 </details>
 
-[Run live query B1](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=B1)
-
 Applications fell 30.7 percent between 2022 and 2023 and the dollars lent fell
 43.4 percent, so the average loan shrank at the same time as the count. By 2025
 the market had recovered to 78.7 percent of its 2022 application volume, 75.6
@@ -617,7 +740,7 @@ and it is the reason every table here does.
 The withdrawal rate moves very little across the four years, which makes the
 incompleteness drift easier to see rather than harder.
 
-### B2. The typical loan that was made, by year
+### B2. The Typical Loan That Was Made, by Year
 
 | activity_year | originated_loans | median_applicant_income | median_property_value | median_loan_amount | median_loan_to_value | median_loan_to_income | median_interest_rate |
 |---|---|---|---|---|---|---|---|
@@ -627,7 +750,7 @@ incompleteness drift easier to see rather than harder.
 | 2,025 | 232,233 | 137,000 | 525,000 | 255,000 | 74.72 | 1.87 | 6.625 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=B2">Query B2</a></summary>
 
 ```sql
 -- B2. Market trend: the typical loan that was made, by filing year.
@@ -639,19 +762,19 @@ SELECT activity_year,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN income_thousands > 0
                             THEN income_thousands * 1000 END)
-             AS numeric))                                              AS median_applicant_income,
+             AS DECIMAL(24,8)))                                              AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY property_value)
-             AS numeric))                                              AS median_property_value,
+             AS DECIMAL(24,8)))                                              AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY loan_amount)
-             AS numeric))                                              AS median_loan_amount,
+             AS DECIMAL(24,8)))                                              AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY loan_to_value_ratio)
-             AS numeric), 2)                                           AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                           AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN income_thousands > 0
                             THEN loan_amount / (income_thousands * 1000) END)
-             AS numeric), 2)                                           AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                           AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY interest_rate)
-             AS numeric), 3)                                           AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                           AS median_interest_rate
 FROM marts.fct_application
 WHERE action_taken = '1'
 GROUP BY 1
@@ -659,8 +782,6 @@ ORDER BY 1;
 ```
 
 </details>
-
-[Run live query B2](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=B2)
 
 **The median interest rate moved 237.5 basis points in one year**, from 4.375
 percent in 2022 to 6.750 in 2023. Every pooled median rate elsewhere on this page
@@ -680,7 +801,7 @@ product rules rather than by what a borrower can afford.
 
 ---
 
-## C. Applicant demographics: affordability and borrowing
+## C. Applicant Demographics: Affordability and Borrowing
 
 <details>
 <summary><b>Eleven queries: the borrowing profile of each applicant group, and the market by income band</b></summary>
@@ -701,7 +822,7 @@ loan in the row; A2 sets out the test for that. And median applicant income
 excludes rows reporting zero or a negative figure everywhere, which is the same
 treatment loan-to-income has to use.
 
-### C1a. Applications and outcomes by applicant race
+### C1a. Applications and Outcomes by Applicant Race
 
 **The pair.** The **a** query covers every application the group filed, on A1's
 denominators, and its four rates sum to 100 across the row. The **b** query
@@ -723,7 +844,7 @@ behind six medians.
 | Free Form Text Only | 637 | 30.61 | 51.33 | 7.38 | 10.68 | 187 | 0.02 | 54,100,000 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C1a">Query C1a</a></summary>
 
 ```sql
 -- C1a. Applications and outcomes by applicant race.
@@ -760,8 +881,6 @@ ORDER BY 2 DESC;
 
 </details>
 
-[Run live query C1a](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C1a)
-
 White applicants account for 65.32 percent of originated loans and Race Not
 Available for a further 16.94, so the six named minority categories together
 account for 17.74 percent.
@@ -775,7 +894,7 @@ Free Form Text Only carries 637 applications, 0.02 percent of originations. Its
 rates move on numbers too small to be stable and it is shown for completeness
 rather than comparison.
 
-### C1b. Loan characteristics by applicant race
+### C1b. Loan Characteristics by Applicant Race
 
 | applicant_race | originated_loans | median_applicant_income | median_property_value | median_loan_amount | median_loan_to_value | median_loan_to_income | median_interest_rate |
 |---|---|---|---|---|---|---|---|
@@ -790,7 +909,7 @@ rather than comparison.
 | Free Form Text Only | 187 | 116,000 | 575,000 | 205,000 | 74.07 | 2.02 | 6.250 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C1b">Query C1b</a></summary>
 
 ```sql
 -- C1b. Loan characteristics by applicant race.
@@ -812,19 +931,19 @@ SELECT a.derived_race                                                           
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.income_thousands > 0
                             THEN f.income_thousands * 1000 END)
-             AS numeric))                                                   AS median_applicant_income,
+             AS DECIMAL(24,8)))                                                   AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.property_value)
-             AS numeric))                                                   AS median_property_value,
+             AS DECIMAL(24,8)))                                                   AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_amount)
-             AS numeric))                                                   AS median_loan_amount,
+             AS DECIMAL(24,8)))                                                   AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_to_value_ratio)
-             AS numeric), 2)                                                AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.income_thousands > 0
                             THEN f.loan_amount / (f.income_thousands * 1000) END)
-             AS numeric), 2)                                                AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.interest_rate)
-             AS numeric), 3)                                                AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                                AS median_interest_rate
 FROM marts.fct_application f
 JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
 WHERE f.action_taken = '1'
@@ -833,8 +952,6 @@ ORDER BY 2 DESC;
 ```
 
 </details>
-
-[Run live query C1b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C1b)
 
 **The property and income columns do not follow the volume column.** White
 applicants record the lowest median property value of any named group except
@@ -857,7 +974,7 @@ unreported ones, and price is tighter still: 6.125 to 6.490 percent, a spread of
 of two. **Whatever separates these groups, the rate on the note separates them
 far less than anything else measured here.**
 
-### C2a. Applications and outcomes by applicant sex
+### C2a. Applications and Outcomes by Applicant Sex
 
 **The pair.** The **a** query covers every application the group filed, on A1's
 denominators, and its four rates sum to 100 across the row. The **b** query
@@ -874,7 +991,7 @@ behind six medians.
 | Sex Not Available | 162,123 | 60.42 | 19.12 | 5.11 | 15.35 | 90,363 | 9.50 | 68,972,445,000 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C2a">Query C2a</a></summary>
 
 ```sql
 -- C2a. Applications and outcomes by applicant sex.
@@ -911,8 +1028,6 @@ ORDER BY 2 DESC;
 
 </details>
 
-[Run live query C2a](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C2a)
-
 Male applicants file the most applications at 557,903, but Joint produces the
 most loans at 338,370, because Joint converts far better.
 
@@ -925,7 +1040,7 @@ and 9.9 above female. Two incomes and two credit records make a stronger
 application than one, and Joint is a category of application rather than a
 category of person.
 
-### C2b. Loan characteristics by applicant sex
+### C2b. Loan Characteristics by Applicant Sex
 
 | applicant_sex | originated_loans | median_applicant_income | median_property_value | median_loan_amount | median_loan_to_value | median_loan_to_income | median_interest_rate |
 |---|---|---|---|---|---|---|---|
@@ -935,7 +1050,7 @@ category of person.
 | Sex Not Available | 90,363 | 139,000 | 615,000 | 335,000 | 70.00 | 1.91 | 6.375 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C2b">Query C2b</a></summary>
 
 ```sql
 -- C2b. Loan characteristics by applicant sex.
@@ -957,19 +1072,19 @@ SELECT a.derived_sex                                                            
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.income_thousands > 0
                             THEN f.income_thousands * 1000 END)
-             AS numeric))                                                   AS median_applicant_income,
+             AS DECIMAL(24,8)))                                                   AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.property_value)
-             AS numeric))                                                   AS median_property_value,
+             AS DECIMAL(24,8)))                                                   AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_amount)
-             AS numeric))                                                   AS median_loan_amount,
+             AS DECIMAL(24,8)))                                                   AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_to_value_ratio)
-             AS numeric), 2)                                                AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.income_thousands > 0
                             THEN f.loan_amount / (f.income_thousands * 1000) END)
-             AS numeric), 2)                                                AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.interest_rate)
-             AS numeric), 3)                                                AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                                AS median_interest_rate
 FROM marts.fct_application f
 JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
 WHERE f.action_taken = '1'
@@ -978,8 +1093,6 @@ ORDER BY 2 DESC;
 ```
 
 </details>
-
-[Run live query C2b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C2b)
 
 Median applicant income is 115,000 dollars for male applicants and 95,000 for
 female, a ratio of 1.21. Median property value is 455,000 against 375,000 and
@@ -994,7 +1107,7 @@ at 70. Taken with its withdrawal rate in C2a, that is disproportionately
 companies, trusts and estates, which have no sex to report. The same signature
 appears in the age pair below, far more strongly.
 
-### C3a. Applications and outcomes by applicant age band
+### C3a. Applications and Outcomes by Applicant Age Band
 
 **The pair.** The **a** query covers every application the group filed, on A1's
 denominators, and its four rates sum to 100 across the row. The **b** query
@@ -1015,7 +1128,7 @@ behind six medians.
 | <25 | 35,382 | 69.48 | 16.15 | 3.29 | 11.07 | 23,312 | 2.45 | 6,352,240,000 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C3a">Query C3a</a></summary>
 
 ```sql
 -- C3a. Applications and outcomes by applicant age band.
@@ -1052,8 +1165,6 @@ ORDER BY 2 DESC;
 
 </details>
 
-[Run live query C3a](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C3a)
-
 **Approval falls steadily with age across the named bands**, from 69.53 percent
 at 25 to 34 down to 52.83 above 74, a spread of 16.7 points. Applicants under 25
 sit at 69.48, level with the 25 to 34 band, so the pattern is a decline with age
@@ -1063,7 +1174,7 @@ The 8888 band, HMDA's code for an age that was not provided, records the second
 highest approval rate in the table at 66.87 and the highest withdrawal rate at
 15.66.
 
-### C3b. Loan characteristics by applicant age band
+### C3b. Loan Characteristics by Applicant Age Band
 
 | applicant_age | originated_loans | median_applicant_income | median_property_value | median_loan_amount | median_loan_to_value | median_loan_to_income | median_interest_rate |
 |---|---|---|---|---|---|---|---|
@@ -1077,7 +1188,7 @@ highest approval rate in the table at 66.87 and the highest withdrawal rate at
 | <25 | 23,312 | 77,000 | 225,000 | 195,000 | 90.00 | 2.65 | 6.375 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C3b">Query C3b</a></summary>
 
 ```sql
 -- C3b. Loan characteristics by applicant age band.
@@ -1099,19 +1210,19 @@ SELECT a.applicant_age                                                          
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.income_thousands > 0
                             THEN f.income_thousands * 1000 END)
-             AS numeric))                                                   AS median_applicant_income,
+             AS DECIMAL(24,8)))                                                   AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.property_value)
-             AS numeric))                                                   AS median_property_value,
+             AS DECIMAL(24,8)))                                                   AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_amount)
-             AS numeric))                                                   AS median_loan_amount,
+             AS DECIMAL(24,8)))                                                   AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_to_value_ratio)
-             AS numeric), 2)                                                AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.income_thousands > 0
                             THEN f.loan_amount / (f.income_thousands * 1000) END)
-             AS numeric), 2)                                                AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.interest_rate)
-             AS numeric), 3)                                                AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                                AS median_interest_rate
 FROM marts.fct_application f
 JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
 WHERE f.action_taken = '1'
@@ -1120,8 +1231,6 @@ ORDER BY 2 DESC;
 ```
 
 </details>
-
-[Run live query C3b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C3b)
 
 *For the 8888 band, median applicant income and median loan-to-income rest on the
 111 loans of 36,724 that report an income. Neither figure should be read as that
@@ -1147,7 +1256,7 @@ The scale is worth stating. The band is 3.86 percent of originated loans and
 band comes close. Removing it would quietly drop an eighth of the money in this
 market, which is why it is kept.
 
-### C4a. Applications and outcomes by applicant income band
+### C4a. Applications and Outcomes by Applicant Income Band
 
 | income_band | total_applications | approval_rate | denial_rate | incomplete_rate | withdrawal_rate | originated_loans | originated_share_pct | total_loan_amount |
 |---|---|---|---|---|---|---|---|---|
@@ -1161,7 +1270,7 @@ market, which is why it is kept.
 | Income not reported | 132,428 | 61.83 | 18.43 | 4.89 | 14.86 | 76,965 | 8.09 | 67,102,860,000 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C4a">Query C4a</a></summary>
 
 ```sql
 WITH application AS (
@@ -1211,8 +1320,6 @@ ORDER BY a.band_key;
 
 </details>
 
-[Run live query C4a](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C4a)
-
 There is no income band in the model: HMDA files a single number. The bands are
 built in the query, defined once in a CTE and joined to a labels table so the SQL
 carries one `CASE` rather than two and the rows come back in income order rather
@@ -1235,12 +1342,12 @@ The money is distributed far more unevenly than the loans. The top band takes 26
 percent of the dollars from 11.0 percent of the loans; the bottom band takes 2.1
 percent from 6.5 percent.
 
-### C4b. Loan characteristics by applicant income band
+### C4b. Loan Characteristics by Applicant Income Band
 
 | income_band | originated_loans | median_applicant_income | median_property_value | median_loan_amount | median_loan_to_value | median_loan_to_income | median_interest_rate |
 |---|---|---|---|---|---|---|---|
 | Under 50k | 61,669 | 40,000 | 175,000 | 105,000 | 70.22 | 2.64 | 6.250 |
-| 50k to 74k | 118,761 | 63,000 | 225,000 | 135,000 | 77.00 | 2.26 | 6.250 |
+| 50k to 74k | 118,761 | 63,000 | 225,000 | 135,000 | 77.00 | 2.25 | 6.250 |
 | 75k to 99k | 127,952 | 87,000 | 305,000 | 175,000 | 75.68 | 2.08 | 6.250 |
 | 100k to 149k | 217,903 | 122,000 | 445,000 | 245,000 | 77.57 | 2.03 | 6.250 |
 | 150k to 199k | 131,972 | 170,000 | 595,000 | 325,000 | 77.98 | 1.92 | 6.375 |
@@ -1249,7 +1356,7 @@ percent from 6.5 percent.
 | Income not reported | 76,965 |  | 765,000 | 455,000 | 68.05 |  | 6.750 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C4b">Query C4b</a></summary>
 
 ```sql
 WITH application AS (
@@ -1281,19 +1388,19 @@ SELECT l.income_band,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN a.income_thousands > 0
                             THEN a.income_thousands * 1000 END)
-             AS numeric))                                                   AS median_applicant_income,
+             AS DECIMAL(24,8)))                                                   AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY a.property_value)
-             AS numeric))                                                   AS median_property_value,
+             AS DECIMAL(24,8)))                                                   AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY a.loan_amount)
-             AS numeric))                                                   AS median_loan_amount,
+             AS DECIMAL(24,8)))                                                   AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY a.loan_to_value_ratio)
-             AS numeric), 2)                                                AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN a.income_thousands > 0
                             THEN a.loan_amount / (a.income_thousands * 1000) END)
-             AS numeric), 2)                                                AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY a.interest_rate)
-             AS numeric), 3)                                                AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                                AS median_interest_rate
 FROM application a
 JOIN band_label l ON l.band_key = a.band_key
 WHERE a.action_taken = '1'
@@ -1302,8 +1409,6 @@ ORDER BY a.band_key;
 ```
 
 </details>
-
-[Run live query C4b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C4b)
 
 Income rises 11.3 times across the seven named bands, property value 7.2 times
 and loan amount 6.7 times. Because borrowing grows more slowly than income,
@@ -1322,7 +1427,7 @@ For Income not reported, median applicant income and median loan-to-income are
 blank rather than zero. Every row in that band reports no usable income, so there
 is nothing to take a median of, and a zero would invite being read as an income.
 
-### C5. Income band by applicant race
+### C5. Income Band by Applicant Race
 
 Each row is an applicant group, each column an income band, and the cells are
 that group's applications as a percentage of its own row, so **every row sums to
@@ -1342,7 +1447,7 @@ exactly to the `total_applications` column in C1a, C2a and C3a.
 | Free Form Text Only | 637 | 13.81 | 16.64 | 15.86 | 22.61 | 11.46 | 8.32 | 5.02 | 6.28 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C5">Query C5</a></summary>
 
 ```sql
 WITH banded AS (
@@ -1385,8 +1490,6 @@ ORDER BY 2 DESC;
 
 </details>
 
-[Run live query C5](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C5)
-
 **Joint is the most top-heavy row and American Indian or Alaska Native the most
 bottom-heavy.** Joint puts 41.34 percent of its applications above 200,000
 dollars and 8.39 percent below 75,000; American Indian or Alaska Native reverses
@@ -1403,7 +1506,7 @@ falls in the not-reported band against 3.70 for White. Whatever causes one field
 to be left blank tends to leave the other blank too, which is worth knowing
 before that category is read as a group of people.
 
-### C6. Income band by applicant sex
+### C6. Income Band by Applicant Sex
 
 Each row is an applicant group, each column an income band, and the cells are
 that group's applications as a percentage of its own row, so **every row sums to
@@ -1418,7 +1521,7 @@ exactly to the `total_applications` column in C1a, C2a and C3a.
 | Sex Not Available | 162,123 | 5.28 | 7.97 | 8.24 | 13.85 | 8.44 | 7.54 | 8.86 | 39.82 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C6">Query C6</a></summary>
 
 ```sql
 WITH banded AS (
@@ -1461,8 +1564,6 @@ ORDER BY 2 DESC;
 
 </details>
 
-[Run live query C6](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C6)
-
 **The two named individual categories are nearly identical in the middle and
 diverge at both ends.** At 100,000 to 149,000 dollars male applications are 21.34
 percent of their row and female 21.44, a tenth of a point apart. Below 75,000 the
@@ -1478,7 +1579,7 @@ figure is partly measuring how many applications are joint.
 six to seven times the rate of the three named categories, which is the same
 signature as C2b and as the 8888 age band.
 
-### C7. Income band by applicant age band
+### C7. Income Band by Applicant Age Band
 
 Each row is an applicant group, each column an income band, and the cells are
 that group's applications as a percentage of its own row, so **every row sums to
@@ -1497,7 +1598,7 @@ exactly to the `total_applications` column in C1a, C2a and C3a.
 | <25 | 35,382 | 19.94 | 26.51 | 16.95 | 17.77 | 6.45 | 3.69 | 3.86 | 4.83 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C7">Query C7</a></summary>
 
 ```sql
 WITH banded AS (
@@ -1540,8 +1641,6 @@ ORDER BY 2 DESC;
 
 </details>
 
-[Run live query C7](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C7)
-
 **The named bands form a U.** Both ends of the age range sit low in the income
 distribution and the middle sits high. Under 25, 46.45 percent of applications
 fall below 75,000 dollars; above 74, 49.90 percent do. In between, the 35 to 44
@@ -1562,7 +1661,7 @@ income.
 
 ---
 
-## D. Mortgage denial analysis
+## D. Mortgage Denial Analysis
 
 <details>
 <summary><b>Six queries: how often each reason is cited, per 100 applications, by income band, loan type, loan purpose, race, sex and age band</b></summary>
@@ -1605,9 +1704,14 @@ credit history at 21.71 and collateral at 17.45. Mortgage insurance denied has
 515 citations and its row is shown for completeness rather than read as a
 pattern.
 
-### D1. Denial reason by applicant income band
+### D1. Denial Reason by Applicant Income Band
 
-| denial_reason | reason_occurrences | inc_under_50k_per_100 | inc_50k_to_74k_per_100 | inc_75k_to_99k_per_100 | inc_100k_to_149k_per_100 | inc_150k_to_199k_per_100 | inc_200k_to_299k_per_100 | inc_300k_and_over_per_100 | inc_not_reported_per_100 |
+*Every cell is the number of times this reason was cited per 100 applications
+the column group filed, purchased loans excluded. It is a rate, not a share of
+the column: a column sums to that group's denial rate times its reasons per
+denial, and the bottom row prints that total.*
+
+| denial_reason | reason_occurrences | inc_under_50k | inc_50k_to_74k | inc_75k_to_99k | inc_100k_to_149k | inc_150k_to_199k | inc_200k_to_299k | inc_300k_and_over | inc_not_reported |
 |---|---|---|---|---|---|---|---|---|---|
 | Debt-to-income ratio | 135,207 | 23.44 | 12.55 | 9.81 | 7.46 | 5.35 | 4.05 | 2.41 | 4.61 |
 | Credit history | 89,302 | 10.79 | 7.34 | 6.09 | 5.14 | 4.55 | 4.11 | 2.80 | 4.69 |
@@ -1622,7 +1726,7 @@ pattern.
 | All reasons | 411,362 | 50.82 | 32.67 | 27.78 | 23.23 | 19.97 | 18.29 | 16.22 | 22.01 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D1">Query D1</a></summary>
 
 ```sql
 -- Denial reason by applicant income band, as a rate.
@@ -1737,21 +1841,21 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')                AS denial_reason,
        count(*)               AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 1) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_under_50k) AS DECIMAL(24,8)), 2)           AS inc_under_50k_per_100,
+             / CAST(max(n.apps_inc_under_50k) AS DECIMAL(24,8)), 2)           AS inc_under_50k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 2) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_50k_to_74k) AS DECIMAL(24,8)), 2)          AS inc_50k_to_74k_per_100,
+             / CAST(max(n.apps_inc_50k_to_74k) AS DECIMAL(24,8)), 2)          AS inc_50k_to_74k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 3) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_75k_to_99k) AS DECIMAL(24,8)), 2)          AS inc_75k_to_99k_per_100,
+             / CAST(max(n.apps_inc_75k_to_99k) AS DECIMAL(24,8)), 2)          AS inc_75k_to_99k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 4) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_100k_to_149k) AS DECIMAL(24,8)), 2)        AS inc_100k_to_149k_per_100,
+             / CAST(max(n.apps_inc_100k_to_149k) AS DECIMAL(24,8)), 2)        AS inc_100k_to_149k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 5) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_150k_to_199k) AS DECIMAL(24,8)), 2)        AS inc_150k_to_199k_per_100,
+             / CAST(max(n.apps_inc_150k_to_199k) AS DECIMAL(24,8)), 2)        AS inc_150k_to_199k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 6) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_200k_to_299k) AS DECIMAL(24,8)), 2)        AS inc_200k_to_299k_per_100,
+             / CAST(max(n.apps_inc_200k_to_299k) AS DECIMAL(24,8)), 2)        AS inc_200k_to_299k,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 7) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_300k_and_over) AS DECIMAL(24,8)), 2)       AS inc_300k_and_over_per_100,
+             / CAST(max(n.apps_inc_300k_and_over) AS DECIMAL(24,8)), 2)       AS inc_300k_and_over,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 8) AS DECIMAL(24,8))
-             / CAST(max(n.apps_inc_not_reported) AS DECIMAL(24,8)), 2) AS inc_not_reported_per_100
+             / CAST(max(n.apps_inc_not_reported) AS DECIMAL(24,8)), 2) AS inc_not_reported
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())
@@ -1759,8 +1863,6 @@ ORDER BY GROUPING(d.denial_reason), 2 DESC;
 ```
 
 </details>
-
-[Run live query D1](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D1)
 
 The bottom row falls at every step of income: 50.82 citations per 100
 applications under 50,000 dollars down to 16.22 above 300,000, a factor of 3.1.
@@ -1784,9 +1886,14 @@ has income in its denominator, so it gets easier to pass as income rises, while
 the collateral test is about the house, and a more expensive house is harder to
 appraise.
 
-### D2. Denial reason by loan type
+### D2. Denial Reason by Loan Type
 
-| denial_reason | reason_occurrences | conventional_per_100 | fha_per_100 | va_per_100 | rhs_fsa_per_100 |
+*Every cell is the number of times this reason was cited per 100 applications
+the column group filed, purchased loans excluded. It is a rate, not a share of
+the column: a column sums to that group's denial rate times its reasons per
+denial, and the bottom row prints that total.*
+
+| denial_reason | reason_occurrences | conventional | fha | va | rhs_fsa |
 |---|---|---|---|---|---|
 | Debt-to-income ratio | 135,207 | 8.78 | 6.41 | 3.31 | 5.08 |
 | Credit history | 89,302 | 5.76 | 4.23 | 3.75 | 2.59 |
@@ -1801,7 +1908,7 @@ appraise.
 | All reasons | 411,362 | 26.15 | 23.91 | 17.22 | 17.62 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D2">Query D2</a></summary>
 
 ```sql
 -- Denial reason by loan type, as a rate.
@@ -1842,13 +1949,13 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')         AS denial_reason,
        count(*)        AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '1') AS DECIMAL(24,8))
-             / CAST(max(n.apps_conventional) AS DECIMAL(24,8)), 2) AS conventional_per_100,
+             / CAST(max(n.apps_conventional) AS DECIMAL(24,8)), 2) AS conventional,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '2') AS DECIMAL(24,8))
-             / CAST(max(n.apps_fha) AS DECIMAL(24,8)), 2)          AS fha_per_100,
+             / CAST(max(n.apps_fha) AS DECIMAL(24,8)), 2)          AS fha,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '3') AS DECIMAL(24,8))
-             / CAST(max(n.apps_va) AS DECIMAL(24,8)), 2)           AS va_per_100,
+             / CAST(max(n.apps_va) AS DECIMAL(24,8)), 2)           AS va,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '4') AS DECIMAL(24,8))
-             / CAST(max(n.apps_rhs_fsa) AS DECIMAL(24,8)), 2)      AS rhs_fsa_per_100
+             / CAST(max(n.apps_rhs_fsa) AS DECIMAL(24,8)), 2)      AS rhs_fsa
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())
@@ -1856,8 +1963,6 @@ ORDER BY GROUPING(d.denial_reason), 2 DESC;
 ```
 
 </details>
-
-[Run live query D2](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D2)
 
 **Conventional is the highest column in the table at 26.15, not the flattest**,
 with FHA at 23.91, USDA at 17.62 and VA lowest at 17.22. The underlying denial
@@ -1877,9 +1982,14 @@ applications that fail the conventional test can pass the FHA one.
 below conventional's 8.78, and that single row is 5.47 of the 8.93 points
 separating the two columns overall.
 
-### D3. Denial reason by loan purpose
+### D3. Denial Reason by Loan Purpose
 
-| denial_reason | reason_occurrences | home_purchase_per_100 | refinancing_per_100 | cash_out_refi_per_100 | home_improvement_per_100 | other_purpose_per_100 | not_applicable_per_100 |
+*Every cell is the number of times this reason was cited per 100 applications
+the column group filed, purchased loans excluded. It is a rate, not a share of
+the column: a column sums to that group's denial rate times its reasons per
+denial, and the bottom row prints that total.*
+
+| denial_reason | reason_occurrences | home_purchase | refinancing | cash_out_refi | home_improvement | other_purpose | not_applicable |
 |---|---|---|---|---|---|---|---|
 | Debt-to-income ratio | 135,207 | 4.00 | 9.53 | 6.64 | 16.37 | 16.38 | 0.42 |
 | Credit history | 89,302 | 1.93 | 4.79 | 4.61 | 12.17 | 12.94 | 0.42 |
@@ -1894,7 +2004,7 @@ separating the two columns overall.
 | All reasons | 411,362 | 14.17 | 25.57 | 24.37 | 45.58 | 45.96 | 15.97 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D3">Query D3</a></summary>
 
 ```sql
 -- Denial reason by loan purpose, as a rate.
@@ -1937,17 +2047,17 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')             AS denial_reason,
        count(*)            AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '1') AS DECIMAL(24,8))
-             / CAST(max(n.apps_home_purchase) AS DECIMAL(24,8)), 2)    AS home_purchase_per_100,
+             / CAST(max(n.apps_home_purchase) AS DECIMAL(24,8)), 2)    AS home_purchase,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '31') AS DECIMAL(24,8))
-             / CAST(max(n.apps_refinancing) AS DECIMAL(24,8)), 2)      AS refinancing_per_100,
+             / CAST(max(n.apps_refinancing) AS DECIMAL(24,8)), 2)      AS refinancing,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '32') AS DECIMAL(24,8))
-             / CAST(max(n.apps_cash_out_refi) AS DECIMAL(24,8)), 2)    AS cash_out_refi_per_100,
+             / CAST(max(n.apps_cash_out_refi) AS DECIMAL(24,8)), 2)    AS cash_out_refi,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '2') AS DECIMAL(24,8))
-             / CAST(max(n.apps_home_improvement) AS DECIMAL(24,8)), 2) AS home_improvement_per_100,
+             / CAST(max(n.apps_home_improvement) AS DECIMAL(24,8)), 2) AS home_improvement,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '4') AS DECIMAL(24,8))
-             / CAST(max(n.apps_other_purpose) AS DECIMAL(24,8)), 2)    AS other_purpose_per_100,
+             / CAST(max(n.apps_other_purpose) AS DECIMAL(24,8)), 2)    AS other_purpose,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '5') AS DECIMAL(24,8))
-             / CAST(max(n.apps_not_applicable) AS DECIMAL(24,8)), 2)   AS not_applicable_per_100
+             / CAST(max(n.apps_not_applicable) AS DECIMAL(24,8)), 2)   AS not_applicable
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())
@@ -1955,8 +2065,6 @@ ORDER BY GROUPING(d.denial_reason), 2 DESC;
 ```
 
 </details>
-
-[Run live query D3](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D3)
 
 **The largest structural finding in this section.** The bottom row runs from
 14.17 citations per 100 applications on home purchase to 45.58 on home
@@ -1979,9 +2087,14 @@ factor of 12: you need a downpayment to buy a house and not to improve one.
 **Credit application incomplete is the cash-out refinancing reason**, 3.33
 against 0.88, because it is the most document-heavy product in the register.
 
-### D4. Denial reason by applicant race
+### D4. Denial Reason by Applicant Race
 
-| denial_reason | reason_occurrences | white_per_100 | black_per_100 | asian_per_100 | amer_indian_per_100 | nhpi_per_100 | two_or_more_per_100 | joint_per_100 | free_form_per_100 | race_not_available_per_100 |
+*Every cell is the number of times this reason was cited per 100 applications
+the column group filed, purchased loans excluded. It is a rate, not a share of
+the column: a column sums to that group's denial rate times its reasons per
+denial, and the bottom row prints that total.*
+
+| denial_reason | reason_occurrences | white | black | asian | amer_indian | nhpi | two_or_more | joint | free_form | race_not_available |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Debt-to-income ratio | 135,207 | 7.88 | 13.43 | 8.85 | 16.43 | 20.77 | 15.91 | 5.47 | 26.53 | 7.96 |
 | Credit history | 89,302 | 5.30 | 10.49 | 3.50 | 12.83 | 12.20 | 13.09 | 4.88 | 21.35 | 5.24 |
@@ -1996,7 +2109,7 @@ against 0.88, because it is the most document-heavy product in the register.
 | All reasons | 411,362 | 23.73 | 40.47 | 24.18 | 47.99 | 50.51 | 48.63 | 19.96 | 70.49 | 26.44 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D4">Query D4</a></summary>
 
 ```sql
 -- Denial reason by applicant race, as a rate.
@@ -2042,23 +2155,23 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')               AS denial_reason,
        count(*)              AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'White') AS DECIMAL(24,8))
-             / CAST(max(n.apps_white) AS DECIMAL(24,8)), 2)              AS white_per_100,
+             / CAST(max(n.apps_white) AS DECIMAL(24,8)), 2)              AS white,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Black or African American') AS DECIMAL(24,8))
-             / CAST(max(n.apps_black) AS DECIMAL(24,8)), 2)              AS black_per_100,
+             / CAST(max(n.apps_black) AS DECIMAL(24,8)), 2)              AS black,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Asian') AS DECIMAL(24,8))
-             / CAST(max(n.apps_asian) AS DECIMAL(24,8)), 2)              AS asian_per_100,
+             / CAST(max(n.apps_asian) AS DECIMAL(24,8)), 2)              AS asian,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'American Indian or Alaska Native') AS DECIMAL(24,8))
-             / CAST(max(n.apps_amer_indian) AS DECIMAL(24,8)), 2)        AS amer_indian_per_100,
+             / CAST(max(n.apps_amer_indian) AS DECIMAL(24,8)), 2)        AS amer_indian,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Native Hawaiian or Other Pacific Islander') AS DECIMAL(24,8))
-             / CAST(max(n.apps_nhpi) AS DECIMAL(24,8)), 2)               AS nhpi_per_100,
+             / CAST(max(n.apps_nhpi) AS DECIMAL(24,8)), 2)               AS nhpi,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '2 or more minority races') AS DECIMAL(24,8))
-             / CAST(max(n.apps_two_or_more) AS DECIMAL(24,8)), 2)        AS two_or_more_per_100,
+             / CAST(max(n.apps_two_or_more) AS DECIMAL(24,8)), 2)        AS two_or_more,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Joint') AS DECIMAL(24,8))
-             / CAST(max(n.apps_joint) AS DECIMAL(24,8)), 2)              AS joint_per_100,
+             / CAST(max(n.apps_joint) AS DECIMAL(24,8)), 2)              AS joint,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Free Form Text Only') AS DECIMAL(24,8))
-             / CAST(max(n.apps_free_form) AS DECIMAL(24,8)), 2)          AS free_form_per_100,
+             / CAST(max(n.apps_free_form) AS DECIMAL(24,8)), 2)          AS free_form,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Race Not Available') AS DECIMAL(24,8))
-             / CAST(max(n.apps_race_not_available) AS DECIMAL(24,8)), 2) AS race_not_available_per_100
+             / CAST(max(n.apps_race_not_available) AS DECIMAL(24,8)), 2) AS race_not_available
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())
@@ -2066,8 +2179,6 @@ ORDER BY GROUPING(d.denial_reason), 2 DESC;
 ```
 
 </details>
-
-[Run live query D4](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D4)
 
 The bottom row runs from 19.96 for Joint to 70.49 for Free Form Text Only, which
 holds 637 applications and is shown rather than compared. **Among the categories
@@ -2092,9 +2203,14 @@ of White on both, and high on the procedural ones: credit application incomplete
 2.22 against 1.32. An application missing a race field is more often also an
 application that was never completed, which is a statement about the filing.
 
-### D5. Denial reason by applicant sex
+### D5. Denial Reason by Applicant Sex
 
-| denial_reason | reason_occurrences | male_per_100 | female_per_100 | joint_per_100 | sex_not_available_per_100 |
+*Every cell is the number of times this reason was cited per 100 applications
+the column group filed, purchased loans excluded. It is a rate, not a share of
+the column: a column sums to that group's denial rate times its reasons per
+denial, and the bottom row prints that total.*
+
+| denial_reason | reason_occurrences | male | female | joint | sex_not_available |
 |---|---|---|---|---|---|
 | Debt-to-income ratio | 135,207 | 9.83 | 10.47 | 6.26 | 6.05 |
 | Credit history | 89,302 | 5.78 | 6.90 | 4.77 | 4.51 |
@@ -2109,7 +2225,7 @@ application that was never completed, which is a statement about the filing.
 | All reasons | 411,362 | 29.08 | 30.13 | 19.78 | 22.97 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D5">Query D5</a></summary>
 
 ```sql
 -- Denial reason by applicant sex, as a rate.
@@ -2150,13 +2266,13 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')              AS denial_reason,
        count(*)             AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Male') AS DECIMAL(24,8))
-             / CAST(max(n.apps_male) AS DECIMAL(24,8)), 2)              AS male_per_100,
+             / CAST(max(n.apps_male) AS DECIMAL(24,8)), 2)              AS male,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Female') AS DECIMAL(24,8))
-             / CAST(max(n.apps_female) AS DECIMAL(24,8)), 2)            AS female_per_100,
+             / CAST(max(n.apps_female) AS DECIMAL(24,8)), 2)            AS female,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Joint') AS DECIMAL(24,8))
-             / CAST(max(n.apps_joint) AS DECIMAL(24,8)), 2)             AS joint_per_100,
+             / CAST(max(n.apps_joint) AS DECIMAL(24,8)), 2)             AS joint,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Sex Not Available') AS DECIMAL(24,8))
-             / CAST(max(n.apps_sex_not_available) AS DECIMAL(24,8)), 2) AS sex_not_available_per_100
+             / CAST(max(n.apps_sex_not_available) AS DECIMAL(24,8)), 2) AS sex_not_available
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())
@@ -2164,8 +2280,6 @@ ORDER BY GROUPING(d.denial_reason), 2 DESC;
 ```
 
 </details>
-
-[Run live query D5](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D5)
 
 **The flattest of the six tables, and the two named individual categories trade
 places by reason rather than one leading throughout.**
@@ -2188,9 +2302,14 @@ Sex Not Available's one standout is credit application incomplete at 2.37, the
 highest in that row, with the exempt code at 0.61, also the highest: the same
 pattern as Race Not Available and as C6.
 
-### D6. Denial reason by applicant age band
+### D6. Denial Reason by Applicant Age Band
 
-| denial_reason | reason_occurrences | under_25_per_100 | age_25_to_34_per_100 | age_35_to_44_per_100 | age_45_to_54_per_100 | age_55_to_64_per_100 | age_65_to_74_per_100 | over_74_per_100 | age_not_provided_per_100 |
+*Every cell is the number of times this reason was cited per 100 applications
+the column group filed, purchased loans excluded. It is a rate, not a share of
+the column: a column sums to that group's denial rate times its reasons per
+denial, and the bottom row prints that total.*
+
+| denial_reason | reason_occurrences | under_25 | age_25_to_34 | age_35_to_44 | age_45_to_54 | age_55_to_64 | age_65_to_74 | over_74 | age_not_provided |
 |---|---|---|---|---|---|---|---|---|---|
 | Debt-to-income ratio | 135,207 | 5.37 | 5.47 | 7.48 | 9.51 | 11.12 | 11.74 | 12.68 | 2.16 |
 | Credit history | 89,302 | 4.68 | 3.53 | 5.33 | 6.89 | 6.96 | 6.22 | 6.61 | 2.15 |
@@ -2205,7 +2324,7 @@ pattern as Race Not Available and as C6.
 | All reasons | 411,362 | 22.05 | 19.31 | 24.54 | 28.88 | 30.25 | 29.53 | 32.22 | 15.27 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D6">Query D6</a></summary>
 
 ```sql
 -- Denial reason by applicant age band, as a rate.
@@ -2250,21 +2369,21 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')             AS denial_reason,
        count(*)            AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '<25') AS DECIMAL(24,8))
-             / CAST(max(n.apps_under_25) AS DECIMAL(24,8)), 2)         AS under_25_per_100,
+             / CAST(max(n.apps_under_25) AS DECIMAL(24,8)), 2)         AS under_25,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '25-34') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_25_to_34) AS DECIMAL(24,8)), 2)     AS age_25_to_34_per_100,
+             / CAST(max(n.apps_age_25_to_34) AS DECIMAL(24,8)), 2)     AS age_25_to_34,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '35-44') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_35_to_44) AS DECIMAL(24,8)), 2)     AS age_35_to_44_per_100,
+             / CAST(max(n.apps_age_35_to_44) AS DECIMAL(24,8)), 2)     AS age_35_to_44,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '45-54') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_45_to_54) AS DECIMAL(24,8)), 2)     AS age_45_to_54_per_100,
+             / CAST(max(n.apps_age_45_to_54) AS DECIMAL(24,8)), 2)     AS age_45_to_54,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '55-64') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_55_to_64) AS DECIMAL(24,8)), 2)     AS age_55_to_64_per_100,
+             / CAST(max(n.apps_age_55_to_64) AS DECIMAL(24,8)), 2)     AS age_55_to_64,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '65-74') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_65_to_74) AS DECIMAL(24,8)), 2)     AS age_65_to_74_per_100,
+             / CAST(max(n.apps_age_65_to_74) AS DECIMAL(24,8)), 2)     AS age_65_to_74,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '>74') AS DECIMAL(24,8))
-             / CAST(max(n.apps_over_74) AS DECIMAL(24,8)), 2)          AS over_74_per_100,
+             / CAST(max(n.apps_over_74) AS DECIMAL(24,8)), 2)          AS over_74,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '8888') AS DECIMAL(24,8))
-             / CAST(max(n.apps_age_not_provided) AS DECIMAL(24,8)), 2) AS age_not_provided_per_100
+             / CAST(max(n.apps_age_not_provided) AS DECIMAL(24,8)), 2) AS age_not_provided
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())
@@ -2272,8 +2391,6 @@ ORDER BY GROUPING(d.denial_reason), 2 DESC;
 ```
 
 </details>
-
-[Run live query D6](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D6)
 
 **Two reasons form ladders running in opposite directions, and they cross.**
 
@@ -2301,7 +2418,7 @@ produces a debt-to-income refusal and not a collateral one.
 
 ---
 
-## E. Lender performance
+## E. Lender Performance
 
 <details>
 <summary><b>Twelve queries: outcomes, loan characteristics, product mix across seven dimensions, pricing and geographic reach, for all 1,139 lenders</b></summary>
@@ -2311,8 +2428,9 @@ there is no filter on where a lender is headquartered: 221 are in New York and
 918 are not, across all fifty states. The only filter is on the applications,
 which are all in New York.
 
-Every query returns all 1,139 rows. The tables here show the first 25 by volume
-and the Run live link returns the rest.
+Every query returns all 1,139 rows. The tables here print the three largest and
+the three smallest with an elision row between them, and the run-live link
+returns the rest.
 
 **Two problems had to be solved before a lender could be counted at all.** HMDA
 files an institution name once per year, and 1,279 LEIs carry more than one
@@ -2334,41 +2452,25 @@ applications and 119 show a denial rate of exactly 100.00. Among the 195 with
 is hidden, and `total_applications` is column 2 so no rate is ever read without
 the count it rests on.
 
-### E1a. Lender outcomes and market share
+### E1a. Lender Outcomes and Market Share
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 | lender_name | total_applications | originated_loans | total_loan_amount | mkt_share_loans_pct | mkt_share_amount_pct | approval_rate | denial_rate | incomplete_rate | withdrawal_rate |
 |---|---|---|---|---|---|---|---|---|---|
 | CITIZENS BANK, NA | 82,894 | 43,046 | 15,525,330,000 | 4.5246 | 4.1800 | 53.39 | 35.57 | 4.86 | 6.17 |
 | ROCKET MORTGAGE | 77,402 | 49,930 | 13,014,370,000 | 5.2482 | 3.5040 | 71.94 | 20.71 | 0.19 | 7.16 |
 | JPMorgan Chase Bank, NA | 56,863 | 38,206 | 27,276,235,000 | 4.0159 | 7.3438 | 69.12 | 10.16 | 8.66 | 12.06 |
-| United Wholesale Mortgage | 56,090 | 42,059 | 19,077,875,000 | 4.4209 | 5.1365 | 76.37 | 11.85 | 4.15 | 7.64 |
-| M&T BANK | 49,630 | 30,030 | 6,035,230,000 | 3.1565 | 1.6249 | 63.18 | 29.69 | 1.11 | 6.03 |
-| Bank of America NA | 46,395 | 17,665 | 10,100,165,000 | 1.8568 | 2.7194 | 40.22 | 41.80 | 11.46 | 6.52 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 4,750,290,000 | 2.0267 | 1.2790 | 44.65 | 44.20 | 1.64 | 9.52 |
-| TD Bank | 40,728 | 19,709 | 8,990,730,000 | 2.0716 | 2.4207 | 49.31 | 31.78 | 7.65 | 11.26 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 14,478,375,000 | 2.0373 | 3.8981 | 54.94 | 18.15 | 2.82 | 24.08 |
-| DISCOVER BANK | 32,936 | 3,833 | 399,755,000 | 0.4029 | 0.1076 | 12.01 | 50.71 | 28.55 | 8.73 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 2,387,855,000 | 2.4354 | 0.6429 | 75.20 | 16.34 | 4.63 | 3.83 |
-| Citibank, NA | 28,310 | 15,762 | 14,425,880,000 | 1.6568 | 3.8840 | 57.52 | 12.76 | 8.82 | 20.90 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 8,198,750,000 | 1.9126 | 2.2074 | 68.36 | 4.48 | 1.60 | 25.56 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 1,568,040,000 | 1.7774 | 0.4222 | 66.55 | 21.36 | 2.02 | 10.07 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 2,656,515,000 | 1.4744 | 0.7152 | 59.28 | 26.71 | 5.51 | 8.51 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 1,934,925,000 | 1.3132 | 0.5210 | 65.73 | 29.74 | 0.74 | 3.79 |
-| Community Bank, N.A. | 23,553 | 17,009 | 2,396,680,000 | 1.7878 | 0.6453 | 72.67 | 14.89 | 1.19 | 11.25 |
-| NEWREZ LLC | 23,132 | 7,614 | 2,869,370,000 | 0.8003 | 0.7725 | 33.57 | 24.91 | 14.53 | 26.99 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 4,650,785,000 | 2.0700 | 1.2522 | 88.54 | 2.79 | 0.83 | 7.83 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 4,406,270,000 | 1.7802 | 1.1863 | 82.33 | 2.89 | 0.51 | 14.27 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 1,411,925,000 | 1.2965 | 0.3801 | 71.80 | 15.47 | 5.88 | 6.86 |
-| loanDepot.com LLC | 16,007 | 10,551 | 4,188,465,000 | 1.1090 | 1.1277 | 67.47 | 18.22 | 0.14 | 14.16 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 1,675,105,000 | 0.8049 | 0.4510 | 54.80 | 41.98 | 1.26 | 1.96 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 1,737,630,000 | 0.9508 | 0.4678 | 69.31 | 6.55 | 8.56 | 15.58 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 3,127,840,000 | 1.1878 | 0.8421 | 88.43 | 1.90 | 0.55 | 9.12 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| The Lincoln National Life Insurance Company | 1 | 1 |  | 0.0001 | 0.0000 | 100.00 | 0.00 | 0.00 | 0.00 |
+| Bank of the West (San Francisco, CA) | 1 | 0 |  | 0.0000 | 0.0000 | 0.00 | 100.00 | 0.00 | 0.00 |
+| REPUBLIC BANK & TRUST | 1 | 1 | 1,505,000 | 0.0001 | 0.0004 | 100.00 | 0.00 | 0.00 | 0.00 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E1a">Query E1a</a></summary>
 
 ```sql
 -- Lender performance, outcomes.
@@ -2459,12 +2561,10 @@ FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 2 DESC;
+ORDER BY 2 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E1a](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E1a)
 
 **The two market shares are different numbers, not a rounding difference.**
 ROCKET MORTGAGE holds 5.2482 percent of the state's originated loans and 3.5040
@@ -2478,8 +2578,8 @@ section carrying market share**; E2 to E10 give each lender's own product mix
 instead, and a lender's share of any single category is (its share there times
 column 5) divided by that category's own share of the market.
 
-**Among the 25 largest the denial rate runs from 1.90 to 50.71 percent and
-approval from 12.01 to 88.54**, and the two extremes took 13,494 and 32,936
+**Among the 25 largest lenders the denial rate runs from 1.90 to 50.71 percent
+and approval from 12.01 to 88.54**, and the two extremes took 13,494 and 32,936
 applications, so the spread is not small-sample noise.
 
 The four rates come apart in useful ways. CROSSCOUNTRY MORTGAGE denies 4.48
@@ -2491,41 +2591,25 @@ This table says these lenders behave very differently. It does not say they are
 doing the same thing differently, which is the claim a reader will jump to;
 [F3](#f3-lender-outcomes-on-one-product) is what tests it.
 
-### E1b. Lender loan characteristics
+### E1b. Lender Loan Characteristics
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 | lender_name | total_applications | originated_loans | median_applicant_income | median_property_value | median_loan_amount | median_loan_to_value | median_loan_to_income | median_interest_rate |
 |---|---|---|---|---|---|---|---|---|
 | CITIZENS BANK, NA | 82,894 | 43,046 | 146,000 | 625,000 | 195,000 | 71.43 | 1.35 | 7.400 |
 | ROCKET MORTGAGE | 77,402 | 49,930 | 107,000 | 395,000 | 205,000 | 71.00 | 2.15 | 6.375 |
 | JPMorgan Chase Bank, NA | 56,863 | 38,206 | 149,000 | 695,000 | 425,000 | 70.00 | 2.47 | 5.990 |
-| United Wholesale Mortgage | 56,090 | 42,059 | 130,000 | 565,000 | 405,000 | 80.00 | 3.15 | 6.375 |
-| M&T BANK | 49,630 | 30,030 | 99,000 | 305,000 | 135,000 | 74.40 | 1.44 | 6.125 |
-| Bank of America NA | 46,395 | 17,665 | 184,000 | 735,000 | 275,000 | 69.59 | 1.63 | 5.875 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 168,000 | 725,000 | 155,000 | 62.45 | 0.95 | 6.990 |
-| TD Bank | 40,728 | 19,709 | 195,000 | 835,000 | 255,000 | 68.00 | 1.34 | 6.890 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 213,000 | 805,000 | 515,000 | 70.00 | 2.32 | 5.000 |
-| DISCOVER BANK | 32,936 | 3,833 | 148,000 | 555,000 | 85,000 | 69.24 | 0.61 | 8.610 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 91,000 | 245,000 | 75,000 | 65.43 | 0.79 | 4.500 |
-| Citibank, NA | 28,310 | 15,762 | 270,000 | 995,000 | 645,000 | 75.00 | 2.28 | 5.625 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 144,000 | 535,000 | 395,000 | 80.00 | 2.67 | 6.625 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 117,000 | 335,000 | 65,000 | 66.67 | 0.60 | 6.490 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 94,000 | 285,000 | 145,000 | 70.37 | 1.53 | 6.250 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 135,000 | 465,000 | 105,000 | 67.15 | 0.75 | 5.500 |
-| Community Bank, N.A. | 23,553 | 17,009 | 85,000 | 195,000 | 105,000 | 79.99 | 1.33 | 6.875 |
-| NEWREZ LLC | 23,132 | 7,614 | 131,000 | 525,000 | 315,000 | 75.00 | 2.42 | 6.625 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 97,000 | 255,000 | 215,000 | 88.14 | 2.26 | 6.500 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 100,000 | 275,000 | 235,000 | 90.00 | 2.39 | 6.250 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 85,000 | 225,000 | 85,000 | 75.42 | 0.97 | 6.500 |
-| loanDepot.com LLC | 16,007 | 10,551 | 129,000 | 545,000 | 355,000 | 76.35 | 2.66 | 5.990 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 166,000 | 745,000 | 155,000 | 65.87 | 0.90 | 5.990 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 138,000 | 635,000 | 125,000 | 59.99 | 0.95 | 6.500 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 107,000 | 305,000 | 245,000 | 89.00 | 2.37 | 5.750 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| The Lincoln National Life Insurance Company | 1 | 1 |  | 38,355,000 |  | 53.84 |  | 5.850 |
+| Bank of the West (San Francisco, CA) | 1 | 0 |  |  |  |  |  |  |
+| REPUBLIC BANK & TRUST | 1 | 1 | 1,496,000 | 3,405,000 | 1,505,000 | 44.12 | 1.01 | 4.875 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E1b">Query E1b</a></summary>
 
 ```sql
 -- Lender performance, loan characteristics.
@@ -2591,33 +2675,31 @@ SELECT l.lender_name,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' AND f.income_thousands > 0
                             THEN f.income_thousands * 1000 END)
-             AS numeric))                                                AS median_applicant_income,
+             AS DECIMAL(24,8)))                                                AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.property_value END)
-             AS numeric))                                                AS median_property_value,
+             AS DECIMAL(24,8)))                                                AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.loan_amount END)
-             AS numeric))                                                AS median_loan_amount,
+             AS DECIMAL(24,8)))                                                AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.loan_to_value_ratio END)
-             AS numeric), 2)                                             AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                             AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' AND f.income_thousands > 0
                             THEN f.loan_amount / (f.income_thousands * 1000) END)
-             AS numeric), 2)                                             AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                             AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)                                             AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                             AS median_interest_rate
 FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 2 DESC;
+ORDER BY 2 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E1b](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E1b)
 
 **The ranges here are the widest on this page, and almost all of it is product
 mix.** Median loan amount runs from 65,000 dollars to 645,000 among the 25
@@ -2636,10 +2718,12 @@ median loan 65,000. **First position against a cheap house** is Community Bank:
 only 22.3 percent subordinate, median property 195,000, median loan 105,000 at
 79.99 percent of value. Similar medians, nothing else alike.
 
-### E2. Product mix by loan type
+### E2. Product Mix by Loan Type
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 *Each share is of that lender's own originated loans, so a row describes its
 product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
@@ -2649,31 +2733,13 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 | ROCKET MORTGAGE | 77,402 | 49,930 | 13,014,370,000 | 74.34 | 9,739,560,000 | 19.32 | 2,383,000,000 | 6.34 | 891,810,000 | 0.00 | 0 |
 | CITIZENS BANK, NA | 82,894 | 43,046 | 15,525,330,000 | 98.92 | 15,382,090,000 | 0.87 | 109,355,000 | 0.21 | 33,885,000 | 0.00 | 0 |
 | United Wholesale Mortgage | 56,090 | 42,059 | 19,077,875,000 | 81.24 | 15,469,500,000 | 15.98 | 3,143,885,000 | 2.64 | 455,090,000 | 0.14 | 9,400,000 |
-| JPMorgan Chase Bank, NA | 56,863 | 38,206 | 27,276,235,000 | 98.72 | 27,084,215,000 | 1.04 | 150,655,000 | 0.24 | 41,365,000 | 0.00 | 0 |
-| M&T BANK | 49,630 | 30,030 | 6,035,230,000 | 91.80 | 5,494,550,000 | 7.34 | 467,505,000 | 0.82 | 70,995,000 | 0.04 | 2,180,000 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 2,387,855,000 | 99.02 | 2,349,865,000 | 0.91 | 34,985,000 | 0.06 | 3,005,000 | 0.00 | 0 |
-| TD Bank | 40,728 | 19,709 | 8,990,730,000 | 99.60 | 8,948,955,000 | 0.35 | 37,525,000 | 0.05 | 4,250,000 | 0.00 | 0 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 4,650,785,000 | 80.57 | 3,817,155,000 | 14.48 | 573,510,000 | 4.18 | 235,705,000 | 0.77 | 24,415,000 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 14,478,375,000 | 97.89 | 14,359,595,000 | 1.35 | 67,260,000 | 0.74 | 51,260,000 | 0.01 | 260,000 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 4,750,290,000 | 99.43 | 4,702,345,000 | 0.56 | 47,440,000 | 0.01 | 505,000 | 0.00 | 0 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 8,198,750,000 | 84.96 | 7,090,090,000 | 11.85 | 874,765,000 | 3.01 | 228,945,000 | 0.18 | 4,950,000 |
-| Bank of America NA | 46,395 | 17,665 | 10,100,165,000 | 99.13 | 10,054,420,000 | 0.79 | 39,940,000 | 0.07 | 5,805,000 | 0.00 | 0 |
-| Community Bank, N.A. | 23,553 | 17,009 | 2,396,680,000 | 99.51 | 2,381,940,000 | 0.13 | 3,050,000 | 0.22 | 8,670,000 | 0.14 | 3,020,000 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 4,406,270,000 | 76.79 | 3,495,610,000 | 17.84 | 671,510,000 | 4.27 | 206,175,000 | 1.09 | 32,975,000 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 1,568,040,000 | 100.00 | 1,568,040,000 | 0.00 | 0 | 0.00 | 0 | 0.00 | 0 |
-| Citibank, NA | 28,310 | 15,762 | 14,425,880,000 | 99.90 | 14,418,845,000 | 0.08 | 5,790,000 | 0.02 | 1,245,000 | 0.00 | 0 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 2,656,515,000 | 94.37 | 2,496,975,000 | 4.80 | 128,015,000 | 0.83 | 31,525,000 | 0.00 | 0 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 1,934,925,000 | 99.62 | 1,919,750,000 | 0.34 | 13,830,000 | 0.03 | 1,100,000 | 0.01 | 245,000 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 1,411,925,000 | 100.00 | 1,411,925,000 | 0.00 | 0 | 0.00 | 0 | 0.00 | 0 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 3,127,840,000 | 92.94 | 2,943,680,000 | 5.88 | 148,020,000 | 1.13 | 34,830,000 | 0.05 | 1,310,000 |
-| loanDepot.com LLC | 16,007 | 10,551 | 4,188,465,000 | 81.24 | 3,430,060,000 | 14.60 | 579,420,000 | 4.15 | 178,830,000 | 0.01 | 155,000 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 1,737,630,000 | 99.93 | 1,734,780,000 | 0.01 | 605,000 | 0.06 | 2,245,000 | 0.00 | 0 |
-| AMERICU CREDIT UNION | 11,856 | 8,167 | 1,108,625,000 | 94.72 | 1,021,720,000 | 4.20 | 62,855,000 | 0.97 | 22,355,000 | 0.11 | 1,695,000 |
-| Contour Mortgage Corporation | 11,544 | 7,719 | 3,857,305,000 | 78.12 | 2,902,450,000 | 18.55 | 814,500,000 | 3.33 | 140,355,000 | 0.00 | 0 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 1,675,105,000 | 100.00 | 1,675,105,000 | 0.00 | 0 | 0.00 | 0 | 0.00 | 0 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| Bank of the West (San Francisco, CA) | 1 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Union Bank and Trust Company | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Bank of Hawaii | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E2">Query E2</a></summary>
 
 ```sql
 -- Lender share of originations by loan type.
@@ -2775,12 +2841,10 @@ JOIN lender l ON l.lei = f.lei
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E2](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E2)
 
 **Four of the 21 lenders with more than 10,000 originated loans write nothing but
 conventional**: Broadview, Empower, Jovia and Discover all read 100.00.
@@ -2798,10 +2862,12 @@ It is not about size. Rocket and United Wholesale are among the largest lenders
 in the state; Homestead and Premium are among the smallest shown. What they share
 is being mortgage companies rather than deposit-takers.
 
-### E3. Product mix by loan purpose
+### E3. Product Mix by Loan Purpose
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 *Each share is of that lender's own originated loans, so a row describes its
 product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
@@ -2811,31 +2877,13 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 | ROCKET MORTGAGE | 77,402 | 49,930 | 13,014,370,000 | 29.51 | 4,886,840,000 | 9.89 | 1,407,445,000 | 54.77 | 6,197,910,000 | 1.52 | 127,905,000 | 4.30 | 394,270,000 | 0.00 | 0 |
 | CITIZENS BANK, NA | 82,894 | 43,046 | 15,525,330,000 | 25.92 | 8,344,255,000 | 23.90 | 3,078,760,000 | 3.13 | 597,945,000 | 26.58 | 1,975,265,000 | 20.46 | 1,529,105,000 | 0.00 | 0 |
 | United Wholesale Mortgage | 56,090 | 42,059 | 19,077,875,000 | 82.38 | 15,815,400,000 | 4.82 | 1,040,670,000 | 12.80 | 2,221,805,000 | 0.00 | 0 | 0.00 | 0 | 0.00 | 0 |
-| JPMorgan Chase Bank, NA | 56,863 | 38,206 | 27,276,235,000 | 69.35 | 17,495,705,000 | 10.93 | 3,449,255,000 | 14.36 | 4,694,580,000 | 1.74 | 224,290,000 | 3.62 | 1,412,405,000 | 0.00 | 0 |
-| M&T BANK | 49,630 | 30,030 | 6,035,230,000 | 40.56 | 3,231,745,000 | 12.80 | 897,875,000 | 8.10 | 610,050,000 | 27.39 | 899,020,000 | 11.14 | 396,540,000 | 0.00 | 0 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 2,387,855,000 | 12.22 | 539,545,000 | 19.47 | 465,550,000 | 2.37 | 115,735,000 | 24.95 | 426,990,000 | 40.97 | 839,615,000 | 0.01 | 420,000 |
-| TD Bank | 40,728 | 19,709 | 8,990,730,000 | 33.68 | 4,960,670,000 | 17.89 | 1,826,475,000 | 2.22 | 309,495,000 | 31.65 | 1,382,985,000 | 14.57 | 511,105,000 | 0.00 | 0 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 4,650,785,000 | 96.59 | 4,507,650,000 | 1.34 | 58,025,000 | 2.07 | 85,110,000 | 0.00 | 0 | 0.00 | 0 | 0.00 | 0 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 14,478,375,000 | 67.42 | 10,786,375,000 | 15.18 | 2,033,285,000 | 14.03 | 1,113,575,000 | 0.63 | 78,820,000 | 2.74 | 466,320,000 | 0.00 | 0 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 4,750,290,000 | 13.75 | 1,274,630,000 | 14.67 | 947,565,000 | 13.17 | 783,525,000 | 40.16 | 1,225,510,000 | 18.25 | 519,060,000 | 0.00 | 0 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 8,198,750,000 | 85.51 | 6,952,015,000 | 3.81 | 379,165,000 | 6.98 | 666,900,000 | 0.63 | 30,245,000 | 3.07 | 170,425,000 | 0.00 | 0 |
-| Bank of America NA | 46,395 | 17,665 | 10,100,165,000 | 45.58 | 6,195,295,000 | 16.78 | 1,802,745,000 | 4.47 | 640,170,000 | 21.94 | 620,045,000 | 11.24 | 841,910,000 | 0.00 | 0 |
-| Community Bank, N.A. | 23,553 | 17,009 | 2,396,680,000 | 52.54 | 1,624,760,000 | 15.90 | 354,570,000 | 0.29 | 8,050,000 | 21.31 | 276,890,000 | 9.96 | 132,410,000 | 0.00 | 0 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 4,406,270,000 | 94.11 | 4,159,685,000 | 2.13 | 93,795,000 | 2.82 | 119,655,000 | 0.61 | 21,280,000 | 0.32 | 11,855,000 | 0.00 | 0 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 1,568,040,000 | 4.81 | 143,035,000 | 13.12 | 295,095,000 | 2.84 | 74,055,000 | 61.01 | 825,275,000 | 18.21 | 230,580,000 | 0.00 | 0 |
-| Citibank, NA | 28,310 | 15,762 | 14,425,880,000 | 77.43 | 11,849,460,000 | 6.48 | 1,029,700,000 | 6.59 | 704,440,000 | 3.79 | 153,790,000 | 5.71 | 688,490,000 | 0.00 | 0 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 2,656,515,000 | 37.63 | 1,422,705,000 | 17.75 | 388,900,000 | 12.09 | 360,660,000 | 16.15 | 205,090,000 | 16.37 | 279,160,000 | 0.00 | 0 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 1,934,925,000 | 13.30 | 545,385,000 | 13.90 | 273,000,000 | 4.00 | 189,390,000 | 46.52 | 630,480,000 | 22.28 | 296,670,000 | 0.00 | 0 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 1,411,925,000 | 25.80 | 593,230,000 | 7.62 | 124,330,000 | 19.35 | 288,635,000 | 34.36 | 296,810,000 | 12.87 | 108,920,000 | 0.00 | 0 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 3,127,840,000 | 89.05 | 2,844,655,000 | 4.12 | 107,135,000 | 6.83 | 176,050,000 | 0.00 | 0 | 0.00 | 0 | 0.00 | 0 |
-| loanDepot.com LLC | 16,007 | 10,551 | 4,188,465,000 | 56.67 | 2,802,585,000 | 6.62 | 308,745,000 | 25.19 | 888,610,000 | 0.05 | 1,135,000 | 11.47 | 187,390,000 | 0.00 | 0 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 1,737,630,000 | 12.73 | 508,160,000 | 7.21 | 122,690,000 | 39.83 | 569,045,000 | 0.82 | 12,210,000 | 39.39 | 523,015,000 | 0.02 | 2,510,000 |
-| AMERICU CREDIT UNION | 11,856 | 8,167 | 1,108,625,000 | 31.54 | 545,270,000 | 16.33 | 178,370,000 | 3.07 | 62,765,000 | 29.58 | 208,020,000 | 19.46 | 113,705,000 | 0.01 | 495,000 |
-| Contour Mortgage Corporation | 11,544 | 7,719 | 3,857,305,000 | 88.87 | 3,487,190,000 | 2.46 | 91,380,000 | 8.67 | 278,735,000 | 0.00 | 0 | 0.00 | 0 | 0.00 | 0 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 1,675,105,000 | 6.78 | 239,665,000 | 14.06 | 334,880,000 | 3.28 | 108,935,000 | 46.91 | 668,540,000 | 28.98 | 323,085,000 | 0.00 | 0 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| Bank of the West (San Francisco, CA) | 1 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Union Bank and Trust Company | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Bank of Hawaii | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E3">Query E3</a></summary>
 
 ```sql
 -- Lender share of originations by loan purpose.
@@ -2935,12 +2983,10 @@ JOIN lender l ON l.lei = f.lei
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E3](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E3)
 
 **This table sorts lenders into three businesses and the numbers are blunt.**
 
@@ -2963,10 +3009,12 @@ Participation thins fast. 829 of the 1,139 lenders write at least one home
 purchase loan, 612 a refinance, but only 380 home improvement and 364 other
 purpose.
 
-### E4. Product mix by loan amount band
+### E4. Product Mix by Loan Amount Band
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 *Each share is of that lender's own originated loans, so a row describes its
 product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
@@ -2976,31 +3024,13 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 | ROCKET MORTGAGE | 77,402 | 49,930 | 13,014,370,000 | 15.36 | 537,455,000 | 44.82 | 3,681,075,000 | 28.36 | 4,996,660,000 | 9.10 | 2,696,015,000 | 1.78 | 748,080,000 | 0.58 | 355,085,000 | 0.00 |
 | CITIZENS BANK, NA | 82,894 | 43,046 | 15,525,330,000 | 22.94 | 573,755,000 | 39.58 | 2,691,045,000 | 17.86 | 2,670,505,000 | 7.69 | 2,000,640,000 | 4.26 | 1,562,745,000 | 7.62 | 6,026,640,000 | 0.04 |
 | United Wholesale Mortgage | 56,090 | 42,059 | 19,077,875,000 | 2.28 | 68,715,000 | 24.63 | 1,885,420,000 | 35.17 | 5,473,145,000 | 26.81 | 6,850,130,000 | 7.25 | 2,590,830,000 | 3.86 | 2,209,635,000 | 0.00 |
-| JPMorgan Chase Bank, NA | 56,863 | 38,206 | 27,276,235,000 | 3.23 | 93,605,000 | 22.96 | 1,549,415,000 | 30.96 | 4,298,550,000 | 19.93 | 4,592,420,000 | 6.25 | 2,026,015,000 | 16.07 | 14,716,230,000 | 0.59 |
-| M&T BANK | 49,630 | 30,030 | 6,035,230,000 | 34.76 | 519,790,000 | 41.16 | 1,932,900,000 | 16.85 | 1,719,280,000 | 4.45 | 782,725,000 | 1.30 | 329,140,000 | 1.43 | 751,395,000 | 0.05 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 2,387,855,000 | 61.22 | 713,260,000 | 32.58 | 1,130,595,000 | 5.58 | 408,680,000 | 0.44 | 58,505,000 | 0.06 | 11,135,000 | 0.10 | 65,680,000 | 0.03 |
-| TD Bank | 40,728 | 19,709 | 8,990,730,000 | 15.71 | 183,090,000 | 31.56 | 976,815,000 | 21.39 | 1,501,575,000 | 13.81 | 1,586,085,000 | 6.62 | 1,116,595,000 | 10.85 | 3,626,570,000 | 0.07 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 4,650,785,000 | 5.04 | 77,440,000 | 59.86 | 2,112,505,000 | 31.63 | 2,055,325,000 | 3.16 | 357,600,000 | 0.30 | 46,910,000 | 0.01 | 1,005,000 | 0.00 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 14,478,375,000 | 3.59 | 51,420,000 | 19.47 | 665,165,000 | 25.55 | 1,802,220,000 | 16.76 | 2,019,060,000 | 10.94 | 1,820,375,000 | 23.08 | 8,120,135,000 | 0.61 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 4,750,290,000 | 25.12 | 299,275,000 | 40.67 | 1,201,980,000 | 22.19 | 1,484,760,000 | 9.27 | 1,000,270,000 | 1.28 | 210,260,000 | 1.44 | 553,745,000 | 0.04 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 8,198,750,000 | 2.27 | 31,955,000 | 24.34 | 805,465,000 | 38.70 | 2,602,380,000 | 24.20 | 2,664,095,000 | 6.05 | 929,775,000 | 4.44 | 1,165,080,000 | 0.00 |
-| Bank of America NA | 46,395 | 17,665 | 10,100,165,000 | 13.89 | 146,865,000 | 31.73 | 879,965,000 | 21.02 | 1,305,085,000 | 11.12 | 1,181,145,000 | 6.05 | 917,220,000 | 15.75 | 5,669,885,000 | 0.44 |
-| Community Bank, N.A. | 23,553 | 17,009 | 2,396,680,000 | 45.65 | 436,820,000 | 42.77 | 1,150,585,000 | 9.90 | 540,700,000 | 1.08 | 107,975,000 | 0.26 | 37,100,000 | 0.29 | 123,500,000 | 0.05 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 4,406,270,000 | 5.95 | 69,670,000 | 49.72 | 1,509,515,000 | 38.49 | 2,204,325,000 | 5.22 | 517,580,000 | 0.45 | 63,865,000 | 0.16 | 41,315,000 | 0.00 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 1,568,040,000 | 67.38 | 601,980,000 | 28.51 | 693,005,000 | 3.86 | 184,275,000 | 0.09 | 9,010,000 | 0.00 | 0 | 0.15 | 79,770,000 | 0.00 |
-| Citibank, NA | 28,310 | 15,762 | 14,425,880,000 | 3.59 | 34,370,000 | 15.14 | 415,930,000 | 20.93 | 1,211,895,000 | 17.81 | 1,745,105,000 | 12.34 | 1,671,755,000 | 29.85 | 9,346,825,000 | 0.34 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 2,656,515,000 | 33.88 | 279,980,000 | 44.08 | 1,005,815,000 | 16.80 | 788,320,000 | 3.50 | 288,535,000 | 0.86 | 100,130,000 | 0.79 | 193,735,000 | 0.10 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 1,934,925,000 | 43.46 | 304,930,000 | 38.74 | 728,730,000 | 14.94 | 619,545,000 | 1.91 | 138,520,000 | 0.47 | 49,625,000 | 0.47 | 93,575,000 | 0.00 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 1,411,925,000 | 57.41 | 380,565,000 | 35.78 | 674,665,000 | 5.97 | 238,385,000 | 0.41 | 30,575,000 | 0.12 | 12,785,000 | 0.29 | 74,950,000 | 0.02 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 3,127,840,000 | 4.59 | 31,905,000 | 45.85 | 956,185,000 | 42.31 | 1,615,675,000 | 6.27 | 415,315,000 | 0.66 | 62,385,000 | 0.31 | 46,375,000 | 0.00 |
-| loanDepot.com LLC | 16,007 | 10,551 | 4,188,465,000 | 8.02 | 58,350,000 | 26.17 | 466,295,000 | 36.01 | 1,414,685,000 | 21.49 | 1,359,655,000 | 5.59 | 502,090,000 | 2.73 | 387,390,000 | 0.00 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 1,737,630,000 | 35.29 | 191,850,000 | 39.03 | 523,705,000 | 18.77 | 596,250,000 | 5.49 | 282,835,000 | 0.75 | 58,470,000 | 0.66 | 84,520,000 | 0.00 |
-| AMERICU CREDIT UNION | 11,856 | 8,167 | 1,108,625,000 | 51.02 | 220,705,000 | 36.97 | 479,015,000 | 10.26 | 274,300,000 | 1.04 | 49,685,000 | 0.29 | 19,460,000 | 0.42 | 65,460,000 | 0.00 |
-| Contour Mortgage Corporation | 11,544 | 7,719 | 3,857,305,000 | 0.40 | 2,585,000 | 10.38 | 145,425,000 | 39.82 | 1,214,950,000 | 40.78 | 1,890,100,000 | 7.09 | 454,865,000 | 1.53 | 149,380,000 | 0.00 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 1,675,105,000 | 24.56 | 115,605,000 | 44.89 | 514,930,000 | 21.28 | 557,060,000 | 7.81 | 321,230,000 | 0.51 | 33,025,000 | 0.93 | 133,255,000 | 0.01 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| Bank of the West (San Francisco, CA) | 1 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  |
+| Union Bank and Trust Company | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  |
+| Bank of Hawaii | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E4">Query E4</a></summary>
 
 ```sql
 -- Lender share of originations by loan amount band.
@@ -3111,12 +3141,10 @@ FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E4](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E4)
 
 The six bands are round numbers on the actual distribution of originated loans,
 whose quartiles are 115,000 and 485,000 dollars.
@@ -3135,10 +3163,12 @@ Fargo. Without it the six size bands would quietly cover 99.78 percent of a
 lender's loans rather than all of them. It has no amount column beside it because
 a loan with no amount contributes nothing to the dollars by definition.
 
-### E5. Product mix by applicant income band
+### E5. Product Mix by Applicant Income Band
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 *Each share is of that lender's own originated loans, so a row describes its
 product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
@@ -3148,31 +3178,13 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 | ROCKET MORTGAGE | 77,402 | 49,930 | 13,014,370,000 | 9.16 | 537,065,000 | 17.50 | 1,410,040,000 | 17.72 | 1,841,310,000 | 26.54 | 3,588,170,000 | 13.66 | 2,307,445,000 | 9.67 | 1,937,015,000 | 4.46 | 1,183,550,000 | 1.30 | 209,775,000 |
 | CITIZENS BANK, NA | 82,894 | 43,046 | 15,525,330,000 | 7.13 | 275,265,000 | 11.04 | 541,820,000 | 12.16 | 768,045,000 | 20.62 | 1,763,030,000 | 14.06 | 1,626,740,000 | 14.89 | 2,488,010,000 | 19.31 | 7,417,095,000 | 0.80 | 645,325,000 |
 | United Wholesale Mortgage | 56,090 | 42,059 | 19,077,875,000 | 5.76 | 448,020,000 | 11.68 | 1,139,150,000 | 14.11 | 1,836,750,000 | 29.02 | 5,309,970,000 | 17.60 | 3,985,285,000 | 12.81 | 3,327,900,000 | 8.77 | 2,975,725,000 | 0.25 | 55,075,000 |
-| JPMorgan Chase Bank, NA | 56,863 | 38,206 | 27,276,235,000 | 2.45 | 132,240,000 | 8.38 | 631,915,000 | 11.86 | 1,222,340,000 | 21.57 | 2,940,495,000 | 14.04 | 2,460,780,000 | 13.58 | 2,922,625,000 | 16.11 | 7,268,925,000 | 12.01 | 9,696,915,000 |
-| M&T BANK | 49,630 | 30,030 | 6,035,230,000 | 11.44 | 308,235,000 | 18.00 | 647,895,000 | 15.52 | 673,620,000 | 20.44 | 1,123,095,000 | 10.19 | 723,645,000 | 7.50 | 701,585,000 | 6.59 | 1,167,475,000 | 10.32 | 689,680,000 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 2,387,855,000 | 13.39 | 200,355,000 | 22.47 | 416,885,000 | 18.99 | 400,460,000 | 23.80 | 581,150,000 | 10.71 | 310,445,000 | 6.59 | 238,190,000 | 2.87 | 149,660,000 | 1.19 | 90,710,000 |
-| TD Bank | 40,728 | 19,709 | 8,990,730,000 | 1.90 | 38,230,000 | 4.97 | 133,615,000 | 7.72 | 263,870,000 | 19.37 | 865,380,000 | 16.07 | 926,270,000 | 20.36 | 1,639,625,000 | 27.43 | 4,572,315,000 | 2.18 | 551,425,000 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 4,650,785,000 | 9.09 | 233,775,000 | 22.31 | 765,190,000 | 19.90 | 823,750,000 | 24.87 | 1,243,655,000 | 12.10 | 734,680,000 | 7.68 | 552,850,000 | 3.17 | 260,985,000 | 0.88 | 35,900,000 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 14,478,375,000 | 2.17 | 61,305,000 | 6.40 | 223,170,000 | 8.55 | 410,355,000 | 16.65 | 1,083,635,000 | 12.38 | 1,065,320,000 | 16.10 | 1,954,085,000 | 35.85 | 9,285,515,000 | 1.90 | 394,990,000 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 4,750,290,000 | 1.59 | 27,240,000 | 4.50 | 107,950,000 | 9.03 | 250,665,000 | 25.63 | 894,835,000 | 21.72 | 928,265,000 | 22.48 | 1,130,375,000 | 14.68 | 1,174,390,000 | 0.38 | 236,570,000 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 8,198,750,000 | 2.78 | 80,005,000 | 8.90 | 321,950,000 | 12.25 | 592,845,000 | 26.40 | 1,826,795,000 | 17.48 | 1,532,725,000 | 15.50 | 1,585,530,000 | 12.24 | 1,759,380,000 | 4.45 | 499,520,000 |
-| Bank of America NA | 46,395 | 17,665 | 10,100,165,000 | 3.56 | 81,200,000 | 8.23 | 228,850,000 | 9.05 | 306,225,000 | 18.25 | 795,740,000 | 13.30 | 724,860,000 | 16.52 | 1,228,615,000 | 28.26 | 5,783,625,000 | 2.82 | 951,050,000 |
-| Community Bank, N.A. | 23,553 | 17,009 | 2,396,680,000 | 15.35 | 186,925,000 | 24.16 | 417,005,000 | 19.00 | 396,615,000 | 21.63 | 554,565,000 | 8.60 | 274,560,000 | 4.66 | 190,015,000 | 2.79 | 154,800,000 | 3.82 | 222,195,000 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 4,406,270,000 | 8.31 | 178,805,000 | 21.12 | 646,805,000 | 20.09 | 768,295,000 | 25.31 | 1,203,910,000 | 12.26 | 713,220,000 | 8.37 | 554,530,000 | 3.84 | 323,265,000 | 0.70 | 17,440,000 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 1,568,040,000 | 5.50 | 47,850,000 | 14.45 | 153,245,000 | 17.97 | 217,335,000 | 29.10 | 418,230,000 | 17.29 | 300,475,000 | 11.29 | 235,335,000 | 3.19 | 91,670,000 | 1.22 | 103,900,000 |
-| Citibank, NA | 28,310 | 15,762 | 14,425,880,000 | 1.02 | 24,900,000 | 4.31 | 120,785,000 | 7.17 | 276,530,000 | 13.30 | 712,665,000 | 9.94 | 745,030,000 | 15.29 | 1,536,900,000 | 43.74 | 10,047,930,000 | 5.23 | 961,140,000 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 2,656,515,000 | 13.50 | 177,120,000 | 20.72 | 375,685,000 | 17.05 | 364,670,000 | 20.77 | 529,110,000 | 10.77 | 340,705,000 | 8.24 | 338,950,000 | 5.75 | 396,220,000 | 3.19 | 134,055,000 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 1,934,925,000 | 2.91 | 25,240,000 | 10.13 | 125,925,000 | 14.50 | 221,430,000 | 29.01 | 482,740,000 | 19.38 | 361,455,000 | 14.70 | 328,845,000 | 7.18 | 244,535,000 | 2.19 | 144,755,000 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 1,411,925,000 | 14.81 | 138,535,000 | 24.50 | 269,460,000 | 20.17 | 249,310,000 | 22.41 | 324,110,000 | 9.44 | 157,545,000 | 5.45 | 122,270,000 | 1.37 | 56,305,000 | 1.85 | 94,390,000 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 3,127,840,000 | 5.83 | 85,195,000 | 18.95 | 391,715,000 | 19.75 | 507,240,000 | 27.60 | 893,475,000 | 14.09 | 558,430,000 | 9.34 | 441,255,000 | 3.52 | 221,300,000 | 0.92 | 29,230,000 |
-| loanDepot.com LLC | 16,007 | 10,551 | 4,188,465,000 | 5.03 | 76,105,000 | 11.70 | 240,170,000 | 15.54 | 447,170,000 | 28.00 | 1,100,110,000 | 16.32 | 788,570,000 | 13.81 | 780,825,000 | 9.15 | 733,855,000 | 0.45 | 21,660,000 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 1,737,630,000 | 4.76 | 51,715,000 | 8.62 | 100,990,000 | 13.46 | 190,680,000 | 28.81 | 431,330,000 | 19.21 | 352,840,000 | 17.19 | 350,855,000 | 6.91 | 231,105,000 | 1.03 | 28,115,000 |
-| AMERICU CREDIT UNION | 11,856 | 8,167 | 1,108,625,000 | 10.10 | 62,215,000 | 20.34 | 158,085,000 | 19.77 | 177,885,000 | 25.32 | 271,130,000 | 12.04 | 151,905,000 | 6.24 | 109,030,000 | 1.84 | 38,490,000 | 4.35 | 139,885,000 |
-| Contour Mortgage Corporation | 11,544 | 7,719 | 3,857,305,000 | 2.10 | 57,790,000 | 4.57 | 81,075,000 | 10.75 | 272,950,000 | 33.83 | 1,192,945,000 | 23.46 | 1,005,785,000 | 17.80 | 843,350,000 | 6.75 | 372,715,000 | 0.74 | 30,695,000 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 1,675,105,000 | 2.19 | 21,450,000 | 5.03 | 51,925,000 | 9.47 | 122,115,000 | 24.93 | 339,275,000 | 20.02 | 306,745,000 | 23.52 | 405,025,000 | 13.95 | 336,670,000 | 0.90 | 91,900,000 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| Bank of the West (San Francisco, CA) | 1 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Union Bank and Trust Company | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Bank of Hawaii | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E5">Query E5</a></summary>
 
 ```sql
 -- Lender share of originations by applicant income band.
@@ -3281,12 +3293,10 @@ FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E5](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E5)
 
 The eight bands are the ones defined in C4a, so a lender's income profile reads
 directly against the market's.
@@ -3304,41 +3314,25 @@ Income not reported is a lender characteristic, not noise: JPMorgan 12.01
 percent and M&T 10.32 against a market figure of 8.09, while several large
 lenders are below 1.
 
-### E6. Interest rate distribution
+### E6. Interest Rate Distribution
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 | lender_name | total_applications | originated_loans | loans_with_rate | total_loan_amount | p10_interest_rate | p25_interest_rate | median_interest_rate | p75_interest_rate | p90_interest_rate |
 |---|---|---|---|---|---|---|---|---|---|
 | ROCKET MORTGAGE | 77,402 | 49,930 | 49,930.00 | 13,014,370,000 | 3.500 | 5.375 | 6.375 | 6.990 | 8.800 |
 | CITIZENS BANK, NA | 82,894 | 43,046 | 43,046.00 | 15,525,330,000 | 3.750 | 5.625 | 7.400 | 8.900 | 10.150 |
 | United Wholesale Mortgage | 56,090 | 42,059 | 42,059.00 | 19,077,875,000 | 4.750 | 5.820 | 6.375 | 6.880 | 7.500 |
-| JPMorgan Chase Bank, NA | 56,863 | 38,206 | 38,206.00 | 27,276,235,000 | 3.125 | 4.490 | 5.990 | 6.625 | 7.125 |
-| M&T BANK | 49,630 | 30,030 | 29,537.00 | 6,035,230,000 | 3.240 | 4.750 | 6.125 | 7.125 | 10.140 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 22,993.00 | 2,387,855,000 | 3.750 | 4.500 | 4.500 | 7.350 | 8.500 |
-| TD Bank | 40,728 | 19,709 | 19,709.00 | 8,990,730,000 | 4.040 | 5.490 | 6.890 | 8.440 | 9.090 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 19,693.00 | 4,650,785,000 | 4.875 | 5.875 | 6.500 | 6.875 | 7.250 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 19,382.00 | 14,478,375,000 | 2.750 | 3.500 | 5.000 | 6.125 | 6.750 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 19,281.00 | 4,750,290,000 | 3.750 | 5.500 | 6.990 | 8.000 | 9.000 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 18,196.00 | 8,198,750,000 | 4.875 | 6.000 | 6.625 | 7.000 | 7.500 |
-| Bank of America NA | 46,395 | 17,665 | 17,665.00 | 10,100,165,000 | 2.740 | 4.000 | 5.875 | 6.740 | 7.490 |
-| Community Bank, N.A. | 23,553 | 17,009 | 17,009.00 | 2,396,680,000 | 3.375 | 5.625 | 6.875 | 7.625 | 8.000 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 16,762.00 | 4,406,270,000 | 4.250 | 5.625 | 6.250 | 6.625 | 7.125 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 16,910.00 | 1,568,040,000 | 3.700 | 5.240 | 6.490 | 7.250 | 8.000 |
-| Citibank, NA | 28,310 | 15,762 | 15,762.00 | 14,425,880,000 | 3.000 | 4.125 | 5.625 | 6.375 | 7.000 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 14,024.00 | 2,656,515,000 | 3.390 | 4.750 | 6.250 | 7.250 | 10.390 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 12,493.00 | 1,934,925,000 | 2.240 | 3.740 | 5.500 | 6.875 | 7.940 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 12,335.00 | 1,411,925,000 | 0.000 | 4.500 | 6.500 | 7.500 | 8.500 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 11,300.00 | 3,127,840,000 | 3.500 | 4.750 | 5.750 | 6.250 | 6.625 |
-| loanDepot.com LLC | 16,007 | 10,551 | 10,551.00 | 4,188,465,000 | 3.250 | 4.250 | 5.990 | 6.750 | 7.625 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 9,046.00 | 1,737,630,000 | 3.000 | 4.990 | 6.500 | 7.740 | 9.250 |
-| AMERICU CREDIT UNION | 11,856 | 8,167 | 8,167.00 | 1,108,625,000 | 3.250 | 4.000 | 5.875 | 6.500 | 7.490 |
-| Contour Mortgage Corporation | 11,544 | 7,719 | 7,719.00 | 3,857,305,000 | 4.875 | 5.875 | 6.500 | 6.875 | 7.250 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 7,656.00 | 1,675,105,000 | 0.990 | 3.625 | 5.990 | 6.990 | 7.740 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| Bank of the West (San Francisco, CA) | 1 | 0 | 0.00 | 0 |  |  |  |  |  |
+| Union Bank and Trust Company | 2 | 0 | 0.00 | 0 |  |  |  |  |  |
+| Bank of Hawaii | 2 | 0 | 0.00 | 0 |  |  |  |  |  |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E6">Query E6</a></summary>
 
 ```sql
 -- Lender interest rate distribution.
@@ -3428,29 +3422,27 @@ SELECT l.lender_name,
        COALESCE(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0) AS total_loan_amount,
        round(CAST(percentile_disc(0.10) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)  AS p10_interest_rate,
+             AS DECIMAL(24,8)), 3)  AS p10_interest_rate,
        round(CAST(percentile_disc(0.25) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)  AS p25_interest_rate,
+             AS DECIMAL(24,8)), 3)  AS p25_interest_rate,
        round(CAST(percentile_disc(0.50) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)AS median_interest_rate,
+             AS DECIMAL(24,8)), 3)AS median_interest_rate,
        round(CAST(percentile_disc(0.75) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)  AS p75_interest_rate,
+             AS DECIMAL(24,8)), 3)  AS p75_interest_rate,
        round(CAST(percentile_disc(0.90) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)  AS p90_interest_rate
+             AS DECIMAL(24,8)), 3)  AS p90_interest_rate
 FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E6](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E6)
 
 The median column reproduces E1b's exactly, which is the check that the
 percentiles cover the same population.
@@ -3477,10 +3469,12 @@ reads 0.000 at p10. The filer is the authority on what it filed. They are 0.6
 percent of originated loans, so they move nothing material, and every median rate
 on this page treats them the same way.
 
-### E7. Product mix by loan term
+### E7. Product Mix by Loan Term
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 *Each share is of that lender's own originated loans, so a row describes its
 product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
@@ -3490,31 +3484,13 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 | ROCKET MORTGAGE | 77,402 | 49,930 | 13,014,370,000 | 1.33 | 98,440,000 | 8.65 | 916,420,000 | 16.25 | 1,135,815,000 | 1.54 | 164,555,000 | 72.23 | 10,697,200,000 | 0.00 | 1,940,000 | 0.00 | 0 |
 | CITIZENS BANK, NA | 82,894 | 43,046 | 15,525,330,000 | 0.40 | 416,860,000 | 2.01 | 321,740,000 | 0.35 | 37,770,000 | 71.31 | 5,832,935,000 | 25.92 | 8,915,575,000 | 0.00 | 450,000 | 0.00 | 0 |
 | United Wholesale Mortgage | 56,090 | 42,059 | 19,077,875,000 | 0.12 | 13,130,000 | 2.80 | 394,740,000 | 0.96 | 108,590,000 | 0.16 | 23,850,000 | 95.88 | 18,511,665,000 | 0.08 | 25,900,000 | 0.00 | 0 |
-| JPMorgan Chase Bank, NA | 56,863 | 38,206 | 27,276,235,000 | 0.94 | 176,660,000 | 9.35 | 2,955,670,000 | 2.80 | 373,090,000 | 1.06 | 208,695,000 | 85.77 | 23,557,130,000 | 0.08 | 4,990,000 | 0.00 | 0 |
-| M&T BANK | 49,630 | 30,030 | 6,035,230,000 | 5.64 | 265,935,000 | 3.50 | 224,130,000 | 1.34 | 91,745,000 | 1.75 | 210,675,000 | 87.75 | 5,241,475,000 | 0.01 | 260,000 | 0.01 | 1,010,000 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 2,387,855,000 | 7.99 | 115,110,000 | 4.24 | 101,755,000 | 5.90 | 113,075,000 | 0.01 | 310,000 | 10.69 | 483,955,000 | 0.03 | 2,870,000 | 71.15 | 1,570,780,000 |
-| TD Bank | 40,728 | 19,709 | 8,990,730,000 | 3.43 | 473,385,000 | 4.90 | 214,745,000 | 2.63 | 86,650,000 | 0.06 | 8,455,000 | 88.98 | 8,207,495,000 | 0.00 | 0 | 0.00 | 0 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 4,650,785,000 | 0.12 | 3,325,000 | 1.48 | 63,555,000 | 0.17 | 7,660,000 | 0.22 | 9,220,000 | 97.64 | 4,535,925,000 | 0.37 | 31,100,000 | 0.00 | 0 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 14,478,375,000 | 1.97 | 275,000,000 | 9.24 | 526,945,000 | 3.83 | 277,005,000 | 0.73 | 45,430,000 | 84.11 | 13,347,455,000 | 0.11 | 6,540,000 | 0.00 | 0 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 4,750,290,000 | 0.96 | 266,430,000 | 1.06 | 58,935,000 | 80.52 | 2,743,650,000 | 0.00 | 0 | 17.45 | 1,681,275,000 | 0.00 | 0 | 0.00 | 0 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 8,198,750,000 | 0.07 | 2,400,000 | 1.30 | 72,765,000 | 0.64 | 33,315,000 | 0.29 | 14,895,000 | 97.60 | 8,061,615,000 | 0.10 | 13,760,000 | 0.00 | 0 |
-| Bank of America NA | 46,395 | 17,665 | 10,100,165,000 | 0.55 | 93,885,000 | 8.05 | 2,357,850,000 | 1.21 | 124,060,000 | 0.22 | 18,830,000 | 89.97 | 7,505,310,000 | 0.01 | 230,000 | 0.00 | 0 |
-| Community Bank, N.A. | 23,553 | 17,009 | 2,396,680,000 | 9.95 | 205,565,000 | 11.19 | 191,635,000 | 14.80 | 264,730,000 | 1.96 | 65,475,000 | 58.67 | 1,518,475,000 | 3.40 | 149,155,000 | 0.02 | 1,645,000 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 4,406,270,000 | 0.04 | 1,275,000 | 2.02 | 74,670,000 | 0.38 | 16,200,000 | 0.11 | 5,195,000 | 96.04 | 4,271,875,000 | 0.38 | 34,080,000 | 1.03 | 2,975,000 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 1,568,040,000 | 21.45 | 345,260,000 | 42.03 | 582,190,000 | 19.52 | 312,520,000 | 17.00 | 328,070,000 | 0.00 | 0 | 0.00 | 0 | 0.00 | 0 |
-| Citibank, NA | 28,310 | 15,762 | 14,425,880,000 | 1.01 | 32,255,000 | 3.38 | 211,390,000 | 1.78 | 90,945,000 | 0.18 | 8,035,000 | 93.65 | 14,083,255,000 | 0.00 | 0 | 0.00 | 0 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 2,656,515,000 | 4.48 | 104,565,000 | 10.42 | 209,440,000 | 4.37 | 78,870,000 | 0.38 | 9,960,000 | 80.35 | 2,253,680,000 | 0.00 | 0 | 0.00 | 0 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 1,934,925,000 | 13.02 | 111,260,000 | 9.25 | 245,310,000 | 62.82 | 992,020,000 | 0.10 | 3,380,000 | 14.82 | 582,955,000 | 0.00 | 0 | 0.00 | 0 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 1,411,925,000 | 14.60 | 131,320,000 | 15.38 | 194,600,000 | 1.77 | 35,650,000 | 3.28 | 63,865,000 | 64.37 | 958,720,000 | 0.60 | 27,770,000 | 0.00 | 0 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 3,127,840,000 | 1.24 | 3,000,000 | 5.08 | 122,270,000 | 1.54 | 39,610,000 | 0.15 | 4,365,000 | 91.98 | 2,958,100,000 | 0.00 | 0 | 0.01 | 495,000 |
-| loanDepot.com LLC | 16,007 | 10,551 | 4,188,465,000 | 0.98 | 14,815,000 | 5.58 | 158,995,000 | 7.66 | 117,070,000 | 0.78 | 21,410,000 | 85.01 | 3,876,175,000 | 0.00 | 0 | 0.00 | 0 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 1,737,630,000 | 13.27 | 112,770,000 | 10.24 | 130,840,000 | 23.76 | 320,815,000 | 9.90 | 129,450,000 | 42.84 | 1,043,755,000 | 0.00 | 0 | 0.00 | 0 |
-| AMERICU CREDIT UNION | 11,856 | 8,167 | 1,108,625,000 | 24.34 | 224,530,000 | 11.82 | 90,335,000 | 9.84 | 75,860,000 | 23.53 | 187,680,000 | 27.61 | 455,225,000 | 2.85 | 74,995,000 | 0.00 | 0 |
-| Contour Mortgage Corporation | 11,544 | 7,719 | 3,857,305,000 | 0.08 | 2,360,000 | 0.93 | 22,780,000 | 0.40 | 8,645,000 | 0.10 | 3,070,000 | 98.46 | 3,817,710,000 | 0.01 | 2,605,000 | 0.01 | 135,000 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 1,675,105,000 | 0.61 | 87,430,000 | 0.94 | 23,980,000 | 0.33 | 8,505,000 | 0.00 | 0 | 98.12 | 1,555,190,000 | 0.00 | 0 | 0.00 | 0 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| Bank of the West (San Francisco, CA) | 1 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Union Bank and Trust Company | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Bank of Hawaii | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E7">Query E7</a></summary>
 
 ```sql
 -- Lender share of originations by loan term.
@@ -3622,12 +3598,10 @@ FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E7](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E7)
 
 **The most sharply differentiated table in the section.** Across the market 68.34
 percent of originated loans are 25 to 30 years, 647,904 of them exactly 360
@@ -3651,10 +3625,12 @@ The bands are cut at the standard terms rather than on quantiles, because
 mortgage terms are not continuous and a quantile cut would have put a boundary
 inside the 360-month spike.
 
-### E8. Product mix by applicant age band
+### E8. Product Mix by Applicant Age Band
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 *Each share is of that lender's own originated loans, so a row describes its
 product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
@@ -3664,31 +3640,13 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 | ROCKET MORTGAGE | 77,402 | 49,930 | 13,014,370,000 | 1.56 | 169,075,000 | 12.68 | 1,873,285,000 | 21.34 | 3,102,220,000 | 25.32 | 3,388,480,000 | 22.21 | 2,688,500,000 | 12.59 | 1,351,230,000 | 4.30 | 441,580,000 | 0.00 | 0 |
 | CITIZENS BANK, NA | 82,894 | 43,046 | 15,525,330,000 | 0.65 | 91,460,000 | 12.04 | 2,560,660,000 | 24.71 | 5,166,585,000 | 24.25 | 3,409,300,000 | 21.08 | 2,303,505,000 | 12.16 | 1,106,440,000 | 4.79 | 379,230,000 | 0.33 | 508,150,000 |
 | United Wholesale Mortgage | 56,090 | 42,059 | 19,077,875,000 | 4.56 | 730,325,000 | 32.22 | 5,996,800,000 | 29.49 | 6,013,690,000 | 18.47 | 3,678,980,000 | 10.34 | 1,871,695,000 | 3.95 | 637,870,000 | 0.97 | 148,515,000 | 0.00 | 0 |
-| JPMorgan Chase Bank, NA | 56,863 | 38,206 | 27,276,235,000 | 1.82 | 251,215,000 | 24.00 | 4,588,300,000 | 24.83 | 6,055,820,000 | 18.30 | 4,284,665,000 | 14.35 | 2,842,135,000 | 6.98 | 1,175,915,000 | 2.49 | 386,575,000 | 7.23 | 7,691,610,000 |
-| M&T BANK | 49,630 | 30,030 | 6,035,230,000 | 2.59 | 122,615,000 | 19.45 | 1,212,895,000 | 22.81 | 1,492,375,000 | 19.60 | 1,131,095,000 | 17.86 | 966,940,000 | 11.95 | 582,155,000 | 4.64 | 202,055,000 | 1.09 | 325,100,000 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 2,387,855,000 | 0.88 | 24,715,000 | 10.90 | 269,395,000 | 19.81 | 453,665,000 | 20.73 | 473,260,000 | 23.05 | 536,565,000 | 17.63 | 409,430,000 | 6.62 | 148,055,000 | 0.37 | 72,770,000 |
-| TD Bank | 40,728 | 19,709 | 8,990,730,000 | 0.73 | 64,260,000 | 15.29 | 1,671,650,000 | 28.11 | 3,092,440,000 | 24.20 | 1,938,765,000 | 18.07 | 1,115,700,000 | 9.59 | 507,025,000 | 2.88 | 132,065,000 | 1.13 | 468,825,000 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 4,650,785,000 | 6.15 | 221,580,000 | 40.12 | 1,851,155,000 | 26.33 | 1,354,550,000 | 12.85 | 596,155,000 | 9.15 | 403,975,000 | 4.37 | 181,305,000 | 1.02 | 42,065,000 | 0.00 | 0 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 14,478,375,000 | 1.00 | 71,000,000 | 19.95 | 2,666,360,000 | 33.25 | 5,732,275,000 | 23.38 | 3,263,680,000 | 14.29 | 1,748,495,000 | 5.78 | 595,760,000 | 1.61 | 144,015,000 | 0.73 | 256,790,000 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 4,750,290,000 | 0.25 | 15,610,000 | 10.08 | 579,430,000 | 25.48 | 1,156,980,000 | 27.77 | 1,240,260,000 | 23.34 | 993,565,000 | 9.99 | 421,520,000 | 2.75 | 108,240,000 | 0.34 | 234,685,000 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 8,198,750,000 | 3.11 | 184,030,000 | 32.21 | 2,521,665,000 | 30.50 | 2,741,605,000 | 18.03 | 1,526,860,000 | 10.74 | 836,040,000 | 4.33 | 313,300,000 | 1.09 | 75,250,000 | 0.00 | 0 |
-| Bank of America NA | 46,395 | 17,665 | 10,100,165,000 | 0.87 | 46,485,000 | 15.28 | 1,468,565,000 | 27.30 | 3,103,780,000 | 23.95 | 2,254,105,000 | 18.36 | 1,489,150,000 | 9.49 | 730,470,000 | 3.15 | 218,980,000 | 1.59 | 788,630,000 |
-| Community Bank, N.A. | 23,553 | 17,009 | 2,396,680,000 | 4.91 | 108,295,000 | 22.91 | 581,460,000 | 21.97 | 554,115,000 | 18.71 | 418,355,000 | 16.74 | 333,890,000 | 9.79 | 170,140,000 | 3.32 | 51,330,000 | 1.65 | 179,095,000 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 4,406,270,000 | 6.32 | 204,090,000 | 35.92 | 1,542,505,000 | 27.40 | 1,346,510,000 | 15.21 | 695,910,000 | 9.62 | 395,640,000 | 4.46 | 177,465,000 | 1.07 | 44,150,000 | 0.00 | 0 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 1,568,040,000 | 0.28 | 3,325,000 | 9.63 | 118,060,000 | 25.50 | 368,780,000 | 26.32 | 407,380,000 | 23.39 | 362,135,000 | 11.54 | 177,540,000 | 2.97 | 39,660,000 | 0.38 | 91,160,000 |
-| Citibank, NA | 28,310 | 15,762 | 14,425,880,000 | 1.21 | 87,545,000 | 23.39 | 2,815,710,000 | 33.22 | 5,762,225,000 | 21.19 | 3,308,645,000 | 12.39 | 1,373,760,000 | 5.79 | 491,310,000 | 1.88 | 172,675,000 | 0.93 | 414,010,000 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 2,656,515,000 | 2.26 | 55,395,000 | 17.04 | 553,930,000 | 19.67 | 608,455,000 | 19.11 | 507,335,000 | 21.61 | 483,995,000 | 13.97 | 282,035,000 | 6.14 | 103,935,000 | 0.21 | 61,435,000 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 1,934,925,000 | 0.54 | 14,090,000 | 11.54 | 269,650,000 | 25.61 | 502,910,000 | 26.29 | 465,060,000 | 21.88 | 359,495,000 | 9.93 | 157,165,000 | 3.00 | 42,925,000 | 1.20 | 123,630,000 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 1,411,925,000 | 2.33 | 39,330,000 | 17.41 | 279,095,000 | 24.27 | 322,600,000 | 21.25 | 271,465,000 | 19.94 | 258,100,000 | 11.01 | 124,740,000 | 3.15 | 36,365,000 | 0.63 | 80,230,000 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 3,127,840,000 | 4.63 | 105,035,000 | 37.12 | 1,143,950,000 | 28.44 | 990,190,000 | 14.29 | 448,195,000 | 10.11 | 296,730,000 | 4.63 | 121,975,000 | 0.79 | 21,765,000 | 0.00 | 0 |
-| loanDepot.com LLC | 16,007 | 10,551 | 4,188,465,000 | 2.04 | 82,245,000 | 20.60 | 966,980,000 | 26.41 | 1,293,210,000 | 21.73 | 914,925,000 | 16.93 | 586,820,000 | 8.96 | 261,255,000 | 3.34 | 83,030,000 | 0.00 | 0 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 1,737,630,000 | 0.34 | 11,605,000 | 9.50 | 235,245,000 | 21.69 | 389,050,000 | 29.02 | 469,335,000 | 24.29 | 403,025,000 | 11.30 | 170,110,000 | 3.84 | 53,965,000 | 0.03 | 5,295,000 |
-| AMERICU CREDIT UNION | 11,856 | 8,167 | 1,108,625,000 | 2.87 | 35,450,000 | 19.03 | 240,310,000 | 22.90 | 248,180,000 | 20.20 | 190,990,000 | 18.95 | 162,480,000 | 9.62 | 76,410,000 | 2.61 | 18,845,000 | 3.82 | 135,960,000 |
-| Contour Mortgage Corporation | 11,544 | 7,719 | 3,857,305,000 | 1.92 | 68,030,000 | 34.33 | 1,322,080,000 | 29.93 | 1,220,950,000 | 17.97 | 704,575,000 | 10.99 | 388,500,000 | 3.77 | 122,975,000 | 1.10 | 30,195,000 | 0.00 | 0 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 1,675,105,000 | 0.10 | 2,080,000 | 8.17 | 143,610,000 | 26.73 | 420,715,000 | 28.58 | 445,595,000 | 21.94 | 356,990,000 | 10.38 | 163,295,000 | 3.49 | 55,645,000 | 0.60 | 87,175,000 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| Bank of the West (San Francisco, CA) | 1 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Union Bank and Trust Company | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Bank of Hawaii | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E8">Query E8</a></summary>
 
 ```sql
 -- Lender share of originations by applicant age band.
@@ -3798,12 +3756,10 @@ JOIN lender l ON l.lei = f.lei
 JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E8](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E8)
 
 **Premium Mortgage has the youngest book**: 6.15 percent under 25 and 40.12
 percent at 25 to 34, so 46.3 percent of its loans go to applicants under 35
@@ -3822,10 +3778,12 @@ JPMorgan reports no age on 7.23 percent of its own book, well ahead of everyone
 else, which taken with its 12.01 percent in E5's income-not-reported band is the
 same part of its business showing up twice.
 
-### E9. Product mix by applicant sex
+### E9. Product Mix by Applicant Sex
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 *Each share is of that lender's own originated loans, so a row describes its
 product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
@@ -3835,31 +3793,13 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 | ROCKET MORTGAGE | 77,402 | 49,930 | 13,014,370,000 | 34.39 | 4,297,370,000 | 23.85 | 2,731,260,000 | 26.37 | 3,925,520,000 | 15.39 | 2,060,220,000 |
 | CITIZENS BANK, NA | 82,894 | 43,046 | 15,525,330,000 | 35.62 | 5,153,690,000 | 21.87 | 2,203,475,000 | 35.97 | 6,693,950,000 | 6.54 | 1,474,215,000 |
 | United Wholesale Mortgage | 56,090 | 42,059 | 19,077,875,000 | 39.30 | 7,608,450,000 | 21.53 | 3,508,275,000 | 34.35 | 7,058,750,000 | 4.82 | 902,400,000 |
-| JPMorgan Chase Bank, NA | 56,863 | 38,206 | 27,276,235,000 | 29.44 | 6,280,035,000 | 24.07 | 3,558,370,000 | 37.43 | 8,940,300,000 | 9.06 | 8,497,530,000 |
-| M&T BANK | 49,630 | 30,030 | 6,035,230,000 | 32.51 | 1,784,100,000 | 26.42 | 1,181,005,000 | 37.47 | 2,571,695,000 | 3.60 | 498,430,000 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 2,387,855,000 | 30.32 | 687,965,000 | 25.71 | 484,780,000 | 40.02 | 1,058,240,000 | 3.95 | 156,870,000 |
-| TD Bank | 40,728 | 19,709 | 8,990,730,000 | 34.49 | 3,079,205,000 | 17.97 | 1,164,395,000 | 40.57 | 3,821,915,000 | 6.98 | 925,215,000 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 4,650,785,000 | 33.51 | 1,444,085,000 | 25.82 | 1,029,705,000 | 38.13 | 2,056,345,000 | 2.54 | 120,650,000 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 14,478,375,000 | 28.00 | 4,073,990,000 | 22.05 | 2,012,595,000 | 44.69 | 7,317,705,000 | 5.27 | 1,074,085,000 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 4,750,290,000 | 32.14 | 1,399,010,000 | 16.79 | 620,120,000 | 40.28 | 1,972,790,000 | 10.79 | 758,370,000 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 8,198,750,000 | 35.31 | 2,920,315,000 | 23.96 | 1,673,230,000 | 38.32 | 3,414,885,000 | 2.41 | 190,320,000 |
-| Bank of America NA | 46,395 | 17,665 | 10,100,165,000 | 32.28 | 2,965,620,000 | 21.90 | 1,368,755,000 | 39.99 | 4,255,445,000 | 5.83 | 1,510,345,000 |
-| Community Bank, N.A. | 23,553 | 17,009 | 2,396,680,000 | 31.44 | 662,265,000 | 21.90 | 419,595,000 | 41.24 | 1,018,710,000 | 5.43 | 296,110,000 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 4,406,270,000 | 33.44 | 1,391,415,000 | 25.99 | 1,018,885,000 | 34.47 | 1,717,220,000 | 6.11 | 278,750,000 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 1,568,040,000 | 30.47 | 431,580,000 | 23.73 | 286,350,000 | 38.72 | 643,785,000 | 7.09 | 206,325,000 |
-| Citibank, NA | 28,310 | 15,762 | 14,425,880,000 | 29.11 | 3,854,920,000 | 20.56 | 1,697,950,000 | 38.36 | 5,698,650,000 | 11.97 | 3,174,360,000 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 2,656,515,000 | 30.66 | 772,290,000 | 21.71 | 466,295,000 | 39.22 | 1,113,020,000 | 8.41 | 304,910,000 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 1,934,925,000 | 32.99 | 572,060,000 | 20.44 | 327,645,000 | 36.27 | 724,085,000 | 10.30 | 311,135,000 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 1,411,925,000 | 33.63 | 431,410,000 | 25.88 | 286,380,000 | 36.47 | 556,380,000 | 4.03 | 137,755,000 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 3,127,840,000 | 30.76 | 894,490,000 | 24.30 | 634,760,000 | 37.92 | 1,372,745,000 | 7.02 | 225,845,000 |
-| loanDepot.com LLC | 16,007 | 10,551 | 4,188,465,000 | 34.03 | 1,351,055,000 | 22.50 | 810,820,000 | 33.95 | 1,646,720,000 | 9.52 | 379,870,000 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 1,737,630,000 | 28.32 | 467,210,000 | 23.03 | 358,115,000 | 46.43 | 868,900,000 | 2.22 | 43,405,000 |
-| AMERICU CREDIT UNION | 11,856 | 8,167 | 1,108,625,000 | 32.96 | 313,020,000 | 22.99 | 199,120,000 | 38.41 | 435,045,000 | 5.63 | 161,440,000 |
-| Contour Mortgage Corporation | 11,544 | 7,719 | 3,857,305,000 | 31.00 | 1,147,055,000 | 22.37 | 785,045,000 | 45.72 | 1,889,785,000 | 0.91 | 35,420,000 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 1,675,105,000 | 35.77 | 567,755,000 | 19.69 | 265,630,000 | 42.13 | 726,240,000 | 2.42 | 115,480,000 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| Bank of the West (San Francisco, CA) | 1 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Union Bank and Trust Company | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Bank of Hawaii | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E9">Query E9</a></summary>
 
 ```sql
 -- Lender share of originations by applicant sex.
@@ -3956,12 +3896,10 @@ JOIN lender l ON l.lei = f.lei
 JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E9](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E9)
 
 Across the market Joint is the largest category at 35.57 percent of originated
 loans, ahead of male at 32.81 and female at 22.12.
@@ -3980,10 +3918,12 @@ explains its approval rate in E1a.
 ROCKET MORTGAGE reports no sex on 15.39 percent of its own book, the highest in
 the table and more than six times the lowest.
 
-### E10. Product mix by applicant race
+### E10. Product Mix by Applicant Race
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 *Each share is of that lender's own originated loans, so a row describes its
 product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
@@ -3993,31 +3933,13 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 | ROCKET MORTGAGE | 77,402 | 49,930 | 13,014,370,000 | 63.31 | 7,496,065,000 | 8.72 | 1,275,860,000 | 4.41 | 897,065,000 | 0.39 | 39,980,000 | 0.10 | 12,420,000 | 0.11 | 15,985,000 | 1.33 | 221,250,000 | 0.00 | 0 | 21.62 | 3,055,745,000 |
 | CITIZENS BANK, NA | 82,894 | 43,046 | 15,525,330,000 | 67.55 | 9,401,095,000 | 6.10 | 527,240,000 | 8.44 | 1,812,415,000 | 0.33 | 34,685,000 | 0.19 | 15,040,000 | 0.13 | 14,805,000 | 2.19 | 573,965,000 | 0.04 | 2,410,000 | 15.04 | 3,143,675,000 |
 | United Wholesale Mortgage | 56,090 | 42,059 | 19,077,875,000 | 61.69 | 11,122,180,000 | 7.29 | 1,526,605,000 | 14.31 | 3,196,410,000 | 0.25 | 40,295,000 | 0.12 | 19,505,000 | 0.69 | 173,190,000 | 1.56 | 314,085,000 | 0.00 | 0 | 14.10 | 2,685,605,000 |
-| JPMorgan Chase Bank, NA | 56,863 | 38,206 | 27,276,235,000 | 52.53 | 11,179,665,000 | 8.20 | 1,198,445,000 | 21.29 | 4,228,190,000 | 0.21 | 26,230,000 | 0.32 | 50,195,000 | 0.21 | 29,980,000 | 3.11 | 793,665,000 | 0.00 | 0 | 14.14 | 9,769,865,000 |
-| M&T BANK | 49,630 | 30,030 | 6,035,230,000 | 76.58 | 4,193,695,000 | 7.86 | 390,705,000 | 4.50 | 409,025,000 | 0.35 | 16,290,000 | 0.16 | 6,320,000 | 0.22 | 11,130,000 | 1.40 | 105,115,000 | 0.10 | 2,385,000 | 8.83 | 900,565,000 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 2,387,855,000 | 82.72 | 1,925,095,000 | 6.03 | 109,865,000 | 1.42 | 45,520,000 | 0.22 | 4,135,000 | 0.17 | 3,255,000 | 0.06 | 1,410,000 | 1.32 | 33,985,000 | 0.00 | 0 | 8.06 | 264,590,000 |
-| TD Bank | 40,728 | 19,709 | 8,990,730,000 | 60.23 | 5,165,230,000 | 5.76 | 300,660,000 | 17.07 | 1,764,775,000 | 0.32 | 10,235,000 | 0.36 | 18,195,000 | 0.27 | 21,530,000 | 2.46 | 286,210,000 | 0.00 | 0 | 13.52 | 1,423,895,000 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 4,650,785,000 | 79.01 | 3,698,775,000 | 3.57 | 143,600,000 | 3.27 | 158,220,000 | 0.20 | 8,055,000 | 0.10 | 3,565,000 | 0.08 | 3,350,000 | 1.80 | 99,485,000 | 0.00 | 0 | 11.97 | 535,735,000 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 14,478,375,000 | 60.85 | 8,655,100,000 | 5.58 | 396,675,000 | 12.22 | 1,889,045,000 | 0.18 | 11,980,000 | 0.12 | 11,800,000 | 0.13 | 12,560,000 | 4.48 | 834,240,000 | 0.20 | 15,950,000 | 16.24 | 2,651,025,000 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 4,750,290,000 | 65.55 | 2,767,660,000 | 4.92 | 160,090,000 | 6.86 | 397,250,000 | 0.23 | 9,965,000 | 0.13 | 2,960,000 | 0.11 | 2,695,000 | 1.60 | 81,300,000 | 0.00 | 0 | 20.61 | 1,328,370,000 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 8,198,750,000 | 65.99 | 5,323,650,000 | 7.07 | 590,170,000 | 8.41 | 745,465,000 | 0.38 | 27,135,000 | 0.13 | 11,550,000 | 0.16 | 11,820,000 | 2.70 | 234,290,000 | 0.00 | 0 | 15.15 | 1,254,670,000 |
-| Bank of America NA | 46,395 | 17,665 | 10,100,165,000 | 65.71 | 6,182,465,000 | 8.30 | 520,875,000 | 9.64 | 941,970,000 | 0.36 | 16,325,000 | 0.16 | 6,450,000 | 0.20 | 14,970,000 | 2.69 | 332,900,000 | 0.28 | 11,480,000 | 12.66 | 2,072,730,000 |
-| Community Bank, N.A. | 23,553 | 17,009 | 2,396,680,000 | 86.26 | 1,861,380,000 | 2.34 | 57,490,000 | 1.08 | 34,305,000 | 0.20 | 4,110,000 | 0.06 | 1,375,000 | 0.04 | 760,000 | 1.22 | 35,510,000 | 0.00 | 0 | 8.80 | 401,750,000 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 4,406,270,000 | 73.74 | 3,207,850,000 | 3.81 | 159,500,000 | 4.33 | 193,230,000 | 0.31 | 11,030,000 | 0.12 | 5,550,000 | 0.12 | 3,760,000 | 2.02 | 108,970,000 | 0.00 | 0 | 15.55 | 716,380,000 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 1,568,040,000 | 81.65 | 1,192,135,000 | 3.47 | 43,170,000 | 2.03 | 39,330,000 | 0.33 | 4,110,000 | 0.15 | 2,555,000 | 0.07 | 1,300,000 | 1.60 | 24,810,000 | 0.00 | 0 | 10.70 | 260,630,000 |
-| Citibank, NA | 28,310 | 15,762 | 14,425,880,000 | 50.46 | 6,941,160,000 | 4.77 | 334,300,000 | 19.71 | 2,249,750,000 | 0.11 | 6,775,000 | 0.08 | 7,665,000 | 0.08 | 10,785,000 | 3.71 | 617,240,000 | 0.00 | 0 | 21.08 | 4,258,205,000 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 2,656,515,000 | 76.79 | 1,882,740,000 | 4.66 | 111,565,000 | 4.43 | 156,930,000 | 0.28 | 7,165,000 | 0.10 | 2,810,000 | 0.09 | 2,795,000 | 1.41 | 48,480,000 | 0.01 | 185,000 | 12.23 | 443,845,000 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 1,934,925,000 | 72.69 | 1,295,835,000 | 5.64 | 85,755,000 | 2.23 | 62,960,000 | 0.42 | 6,305,000 | 0.33 | 4,015,000 | 0.09 | 1,575,000 | 2.09 | 38,915,000 | 0.00 | 0 | 16.51 | 439,565,000 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 1,411,925,000 | 84.12 | 1,112,960,000 | 6.12 | 71,215,000 | 1.56 | 32,140,000 | 0.36 | 3,545,000 | 0.10 | 940,000 | 0.07 | 1,245,000 | 1.73 | 23,190,000 | 0.00 | 0 | 5.93 | 166,690,000 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 3,127,840,000 | 72.22 | 2,213,395,000 | 3.76 | 93,255,000 | 6.24 | 243,985,000 | 0.28 | 8,030,000 | 0.04 | 775,000 | 0.11 | 3,250,000 | 2.13 | 78,795,000 | 0.00 | 0 | 15.21 | 486,355,000 |
-| loanDepot.com LLC | 16,007 | 10,551 | 4,188,465,000 | 55.15 | 2,267,335,000 | 8.14 | 325,105,000 | 7.55 | 385,475,000 | 0.32 | 10,780,000 | 0.17 | 5,870,000 | 0.30 | 8,840,000 | 1.84 | 108,450,000 | 0.00 | 0 | 26.52 | 1,076,610,000 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 1,737,630,000 | 80.10 | 1,336,970,000 | 5.02 | 75,990,000 | 5.15 | 151,690,000 | 0.34 | 6,125,000 | 0.28 | 3,625,000 | 0.20 | 3,070,000 | 1.91 | 44,665,000 | 0.00 | 0 | 7.00 | 115,495,000 |
-| AMERICU CREDIT UNION | 11,856 | 8,167 | 1,108,625,000 | 86.64 | 865,920,000 | 2.18 | 21,730,000 | 1.46 | 19,635,000 | 0.38 | 3,685,000 | 0.16 | 1,325,000 | 0.02 | 200,000 | 1.48 | 18,125,000 | 0.00 | 0 | 7.68 | 178,005,000 |
-| Contour Mortgage Corporation | 11,544 | 7,719 | 3,857,305,000 | 51.20 | 1,884,320,000 | 12.19 | 514,985,000 | 8.29 | 341,640,000 | 0.08 | 3,360,000 | 0.08 | 3,150,000 | 0.09 | 3,385,000 | 2.51 | 110,660,000 | 0.00 | 0 | 25.56 | 995,805,000 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 1,675,105,000 | 71.06 | 1,120,330,000 | 8.33 | 103,080,000 | 6.46 | 148,485,000 | 0.84 | 12,980,000 | 0.54 | 5,945,000 | 0.24 | 3,830,000 | 1.48 | 25,905,000 | 0.03 | 590,000 | 11.03 | 253,960,000 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| Bank of the West (San Francisco, CA) | 1 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Union Bank and Trust Company | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
+| Bank of Hawaii | 2 | 0 | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |  | 0 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E10">Query E10</a></summary>
 
 ```sql
 -- Lender share of originations by applicant race.
@@ -4134,12 +4056,10 @@ JOIN lender l ON l.lei = f.lei
 JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E10](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E10)
 
 **The Asian column separates lenders more than any other.** JPMorgan is at 21.29
 percent of its own book and Citibank 19.71, against a market figure of 9.15 and a
@@ -4163,41 +4083,25 @@ differently. That is a rate question, answered in
 [D4](#d4-denial-reason-by-applicant-race) with each group's own applications in
 the denominator.
 
-### E11. Geographic reach
+### E11. Geographic Reach
 
-*All 1,139 lenders are returned. The table below shows the first 25; the Run
-live link returns the complete result and lets you re-sort it.*
+*All 1,139 lenders are returned. The table shows the three largest and the three
+smallest; the run-live link returns the complete result and lets you re-sort it.
+Figures quoted in the reading below come from the full result, not only from the
+six rows printed here.*
 
 | lender_name | total_applications | originated_loans | total_loan_amount | census_tracts | tract_coverage_pct | loans_per_tract |
 |---|---|---|---|---|---|---|
 | ROCKET MORTGAGE | 77,402 | 49,930 | 13,014,370,000 | 4,534 | 85.85 | 11.0 |
 | CITIZENS BANK, NA | 82,894 | 43,046 | 15,525,330,000 | 4,629 | 87.65 | 9.3 |
 | United Wholesale Mortgage | 56,090 | 42,059 | 19,077,875,000 | 4,460 | 84.45 | 9.4 |
-| JPMorgan Chase Bank, NA | 56,863 | 38,206 | 27,276,235,000 | 4,422 | 83.73 | 8.6 |
-| M&T BANK | 49,630 | 30,030 | 6,035,230,000 | 3,679 | 69.66 | 8.2 |
-| ESL Federal Credit Union | 32,325 | 23,170 | 2,387,855,000 | 397 | 7.52 | 58.4 |
-| TD Bank | 40,728 | 19,709 | 8,990,730,000 | 3,509 | 66.45 | 5.6 |
-| Premium Mortgage Corporation | 22,400 | 19,693 | 4,650,785,000 | 1,525 | 28.88 | 12.9 |
-| WELLS FARGO BANK NA | 35,421 | 19,382 | 14,478,375,000 | 3,712 | 70.29 | 5.2 |
-| FOURLEAF FEDERAL CREDIT UNION | 44,180 | 19,281 | 4,750,290,000 | 2,346 | 44.42 | 8.2 |
-| CROSSCOUNTRY MORTGAGE, LLC | 27,201 | 18,196 | 8,198,750,000 | 3,827 | 72.47 | 4.8 |
-| Bank of America NA | 46,395 | 17,665 | 10,100,165,000 | 3,715 | 70.35 | 4.8 |
-| Community Bank, N.A. | 23,553 | 17,009 | 2,396,680,000 | 1,507 | 28.54 | 11.3 |
-| Homestead Funding Corp. | 20,747 | 16,936 | 4,406,270,000 | 1,765 | 33.42 | 9.6 |
-| Broadview Federal Credit Union | 25,778 | 16,910 | 1,568,040,000 | 1,322 | 25.03 | 12.8 |
-| Citibank, NA | 28,310 | 15,762 | 14,425,880,000 | 2,726 | 51.62 | 5.8 |
-| KEYBANK NATIONAL ASSOCIATION | 24,279 | 14,027 | 2,656,515,000 | 2,228 | 42.19 | 6.3 |
-| HUDSON VALLEY CREDIT UNION | 23,885 | 12,493 | 1,934,925,000 | 782 | 14.81 | 16.0 |
-| EMPOWER FEDERAL CREDIT UNION | 17,458 | 12,335 | 1,411,925,000 | 847 | 16.04 | 14.6 |
-| SEFCU Services, LLC | 13,494 | 11,300 | 3,127,840,000 | 1,129 | 21.38 | 10.0 |
-| loanDepot.com LLC | 16,007 | 10,551 | 4,188,465,000 | 3,296 | 62.41 | 3.2 |
-| Teachers Federal Credit Union | 13,781 | 9,046 | 1,737,630,000 | 1,189 | 22.51 | 7.6 |
-| AMERICU CREDIT UNION | 11,856 | 8,167 | 1,108,625,000 | 661 | 12.52 | 12.4 |
-| Contour Mortgage Corporation | 11,544 | 7,719 | 3,857,305,000 | 1,824 | 34.54 | 4.2 |
-| Jovia Financial Federal Credit | 15,187 | 7,658 | 1,675,105,000 | 1,153 | 21.83 | 6.6 |
+| &#8942; &nbsp;*1,133 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
+| Bank of the West (San Francisco, CA) | 1 | 0 | 0 | 0 | 0.00 |  |
+| Union Bank and Trust Company | 2 | 0 | 0 | 0 | 0.00 |  |
+| Bank of Hawaii | 2 | 0 | 0 | 0 | 0.00 |  |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E11">Query E11</a></summary>
 
 ```sql
 -- Lender geographic reach.
@@ -4285,12 +4189,10 @@ FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;
 ```
 
 </details>
-
-[Run live query E11](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E11)
 
 A3 counts 5,281 census tracts in the New York data, which is the figure a
 lender's count is read against. A tract is a neighbourhood of a few thousand
@@ -4334,7 +4236,7 @@ approved", and it is the only claim the data supports.
 Where a recommendation rests on something other than a measurement here, it is
 labelled as such rather than dressed up.
 
-### F1. Outcome by debt to income band
+### F1. Outcome by Debt to Income Band
 
 | dti_band | total_applications | share_of_applications | approval_rate | denial_rate | incomplete_rate | withdrawal_rate |
 |---|---|---|---|---|---|---|
@@ -4349,7 +4251,7 @@ labelled as such rather than dressed up.
 | Not reported | 407,382 | 25.51 | 25.70 | 7.44 | 19.27 | 47.59 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F1">Query F1</a></summary>
 
 ```sql
 -- Outcome by debt-to-income band.
@@ -4407,8 +4309,6 @@ ORDER BY b.band_key;
 
 </details>
 
-[Run live query F1](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F1)
-
 HMDA files this field two ways. Outside the range 36 to 49 it arrives as a band
 string; inside it, as an exact integer percentage. Grouping on the raw column
 would put nineteen values side by side on two different scales, so the query
@@ -4442,7 +4342,7 @@ during underwriting, so an application with none mostly never got that far. This
 row is the largest loss of applications anywhere in the data and not one of them
 is a credit decision.
 
-### F2. Outcome by loan to income and loan to value, home purchase first liens
+### F2. Outcome by Loan to Income and Loan to Value, Home Purchase First Liens
 
 | measure | band | total_applications | share_of_applications | approval_rate | denial_rate |
 |---|---|---|---|---|---|
@@ -4462,7 +4362,7 @@ is a credit decision.
 | loan to value | ratio not reported | 155,126 | 21.72 | 18.14 | 7.82 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F2">Query F2</a></summary>
 
 ```sql
 -- Outcome by loan-to-income and loan-to-value, home purchase first liens only.
@@ -4552,8 +4452,6 @@ ORDER BY measure_order, band_key;
 
 </details>
 
-[Run live query F2](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F2)
-
 **The restriction is the point of this query, not a convenience.** Measured
 across the whole register these two ratios appear to say that lower is better
 and then contradict themselves at the bottom: applications at under one times
@@ -4578,15 +4476,15 @@ times the rate at 80.
 On this population leverage matters much less than people assume and
 loan-to-income matters more, and both have a threshold rather than a gradient.
 
-### F3. Lender outcomes on one product
+### F3. Lender Outcomes on One Product
 
 | lender_name | total_applications | approval_rate | denial_rate | median_loan_to_value | median_loan_to_income | median_applicant_income |
 |---|---|---|---|---|---|---|
 | SEFCU Services, LLC | 10,639 | 90.76 | 1.14 | 90.00 | 2.41 | 110,000 |
 | FIRST REPUBLIC BANK | 4,539 | 84.84 | 1.52 | 75.00 | 2.60 | 304,000 |
 | Lyons National Bank | 2,560 | 92.97 | 1.64 | 80.00 | 2.02 | 110,000 |
-| Homestead Funding Corp. | 14,418 | 83.70 | 1.88 | 85.07 | 2.30 | 110,000 |
 | Premium Mortgage Corporation | 16,996 | 90.47 | 1.88 | 80.00 | 2.18 | 103,000 |
+| Homestead Funding Corp. | 14,418 | 83.70 | 1.88 | 85.07 | 2.30 | 110,000 |
 | FM Home Loans LLC | 3,786 | 77.71 | 2.25 | 75.57 | 3.13 | 187,000 |
 | Morgan Stanley Private Bank NA | 3,637 | 85.40 | 2.72 | 75.00 | 2.29 | 425,000 |
 | Hunt Mortgage Corporation | 4,106 | 83.41 | 2.75 | 85.00 | 2.24 | 99,000 |
@@ -4597,7 +4495,7 @@ loan-to-income matters more, and both have a threshold rather than a gradient.
 | PRIMELENDING | 5,214 | 87.76 | 3.61 | 85.00 | 2.36 | 106,000 |
 | GUARANTEED RATE AFFINITY, LLC | 2,645 | 53.80 | 3.74 | 79.81 | 2.61 | 199,000 |
 | CROSSCOUNTRY MORTGAGE, LLC | 17,534 | 77.00 | 3.84 | 80.00 | 2.63 | 148,000 |
-| 1ST PRIORITY MORTGAGE, INC. | 5,539 | 88.75 | 3.86 | 80.00 | 2.31 | 98,000 |
+| 1ST PRIORITY MORTGAGE, INC. | 5,539 | 88.75 | 3.86 | 80.00 | 2.30 | 98,000 |
 | GUARANTEED RATE, INC. | 5,675 | 60.26 | 3.93 | 80.00 | 2.58 | 163,000 |
 | NATIONWIDE MORTGAGE BANKERS, INC. | 5,544 | 81.51 | 4.04 | 80.00 | 3.73 | 127,000 |
 | UNITED MORTGAGE CORP. | 2,967 | 87.26 | 4.25 | 80.00 | 3.39 | 146,000 |
@@ -4609,7 +4507,7 @@ loan-to-income matters more, and both have a threshold rather than a gradient.
 | Meadowbrook Financial Mortgage Bankers Corp. | 3,188 | 69.17 | 4.67 | 80.00 | 3.48 | 149,000 |
 | UNMB Home Loans Inc | 2,668 | 79.24 | 4.69 | 80.00 | 2.99 | 136,000 |
 | ESL Federal Credit Union | 2,568 | 89.80 | 4.79 | 88.33 | 2.18 | 82,000 |
-| East Coast Capital Corp. | 2,133 | 67.51 | 5.30 | 80.00 | 3.39 | 147,000 |
+| East Coast Capital Corp. | 2,133 | 67.51 | 5.30 | 80.00 | 3.38 | 147,000 |
 | East West Bank | 5,562 | 87.14 | 5.32 | 50.00 | 5.00 | 99,000 |
 | VALLEY NATIONAL BANK | 2,348 | 83.77 | 5.66 | 80.00 | 2.91 | 148,000 |
 | EMPOWER FEDERAL CREDIT UNION | 3,561 | 86.13 | 5.70 | 90.00 | 2.12 | 73,000 |
@@ -4624,14 +4522,14 @@ loan-to-income matters more, and both have a threshold rather than a gradient.
 | Loan Funder LLC | 5,275 | 59.79 | 8.19 | 65.59 |  |  |
 | Trustco Bank | 3,679 | 71.24 | 8.21 | 82.88 | 2.33 | 131,000 |
 | US BANK, N.A. | 5,047 | 70.83 | 8.56 | 79.41 | 2.52 | 258,000 |
-| JPMorgan Chase Bank, NA | 37,265 | 71.89 | 8.69 | 78.00 | 2.61 | 149,000 |
+| JPMorgan Chase Bank, NA | 37,265 | 71.89 | 8.69 | 78.00 | 2.60 | 149,000 |
 | loanDepot.com LLC | 6,907 | 76.24 | 9.16 | 80.00 | 2.77 | 142,000 |
-| Quontic Bank | 3,484 | 68.37 | 9.30 | 75.00 | 3.00 | 148,000 |
+| Quontic Bank | 3,484 | 68.37 | 9.30 | 75.00 | 2.99 | 148,000 |
 | FOURLEAF FEDERAL CREDIT UNION | 3,530 | 70.54 | 9.41 | 77.00 | 2.55 | 170,000 |
 | United Wholesale Mortgage | 35,139 | 79.73 | 9.45 | 80.00 | 3.14 | 130,000 |
 | CARDINAL FINANCIAL COMPANY, LI | 3,292 | 86.21 | 9.63 | 80.00 | 3.15 | 140,000 |
 | M&T BANK | 10,995 | 79.91 | 9.80 | 80.00 | 2.40 | 98,000 |
-| THE FEDERAL SAVINGS BANK | 2,127 | 67.98 | 10.01 | 80.00 | 3.56 | 142,000 |
+| THE FEDERAL SAVINGS BANK | 2,127 | 67.98 | 10.01 | 80.00 | 3.55 | 142,000 |
 | NEWREZ LLC | 5,013 | 69.08 | 10.35 | 80.00 | 2.59 | 147,000 |
 | AMERICU CREDIT UNION | 2,611 | 79.17 | 10.49 | 90.00 | 2.10 | 86,000 |
 | AMERICAN FINANCIAL NETWORK, INC. | 2,197 | 58.67 | 10.56 | 80.00 | 2.87 | 163,000 |
@@ -4656,7 +4554,7 @@ loan-to-income matters more, and both have a threshold rather than a gradient.
 | Credit Human Federal Credit Un | 2,699 | 48.35 | 51.39 | 94.99 | 1.34 | 64,000 |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F3">Query F3</a></summary>
 
 ```sql
 -- Lender outcomes on one product: conventional, first-lien home purchase.
@@ -4700,15 +4598,15 @@ SELECT l.lender_name,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken IN ('1','2','3','7','8')
                             THEN f.loan_to_value_ratio END)
-             AS numeric), 2)                                                AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken IN ('1','2','3','7','8') AND f.income_thousands > 0
                             THEN f.loan_amount / (f.income_thousands * 1000) END)
-             AS numeric), 2)                                                AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken IN ('1','2','3','7','8') AND f.income_thousands > 0
                             THEN f.income_thousands * 1000 END)
-             AS numeric))                                                   AS median_applicant_income
+             AS DECIMAL(24,8)))                                                   AS median_applicant_income
 FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
@@ -4718,12 +4616,10 @@ WHERE f.action_taken <> '6'
   AND p.loan_type    = '1'
 GROUP BY l.lei, l.lender_name
 HAVING count(*) >= 2000
-ORDER BY denial_rate;
+ORDER BY denial_rate, l.lei;
 ```
 
 </details>
-
-[Run live query F3](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F3)
 
 **[E1a](#e1a-lender-outcomes-and-market-share)'s lender spread was mostly product
 mix. This is what is left when the mix is removed.** Same product for every row:
@@ -4750,7 +4646,7 @@ It is still not causal. A denial rate reflects who applies as well as how the
 lender decides, and there is no credit score here. What this establishes is the
 size of the stakes, not the mechanism.
 
-### F4. How much choice a borrower has, by purpose
+### F4. How Much Choice a Borrower Has, by Purpose
 
 | purpose | total_applications | market_denial_rate | lenders_active | lenders_rankable | p10_lender_denial_rate | median_lender_denial_rate | p90_lender_denial_rate |
 |---|---|---|---|---|---|---|---|
@@ -4758,11 +4654,11 @@ size of the stakes, not the mechanism.
 | Home improvement | 247,663 | 35.13 | 493 | 59 | 10.36 | 26.11 | 47.51 |
 | Cash-out refinancing | 231,963 | 19.89 | 625 | 86 | 3.95 | 13.94 | 33.17 |
 | Other purpose | 195,592 | 35.84 | 479 | 54 | 12.20 | 31.88 | 51.49 |
-| Refinancing | 188,094 | 20.45 | 694 | 68 | 3.47 | 17.16 | 34.92 |
+| Refinancing | 188,094 | 20.45 | 694 | 68 | 3.47 | 17.15 | 34.92 |
 | Not applicable | 238 | 14.71 | 36 | 0 |  |  |  |
 
 <details>
-<summary>SQL</summary>
+<summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F4">Query F4</a></summary>
 
 ```sql
 -- How much choice a borrower actually has, by what they are borrowing for.
@@ -4804,13 +4700,13 @@ SELECT l.purpose,
        count(*)                                                           AS lenders_active,
        count(*) FILTER (WHERE r.apps >= 500)                              AS lenders_rankable,
        round(CAST(percentile_disc(0.10) WITHIN GROUP (
-              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS numeric), 2)
+              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS DECIMAL(24,8)), 2)
                                                                           AS p10_lender_denial_rate,
        round(CAST(percentile_disc(0.50) WITHIN GROUP (
-              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS numeric), 2)
+              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS DECIMAL(24,8)), 2)
                                                                           AS median_lender_denial_rate,
        round(CAST(percentile_disc(0.90) WITHIN GROUP (
-              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS numeric), 2)
+              ORDER BY CASE WHEN r.apps >= 500 THEN r.denial_rate END) AS DECIMAL(24,8)), 2)
                                                                           AS p90_lender_denial_rate
 FROM rate r
 JOIN purpose_label l ON l.loan_purpose = r.loan_purpose
@@ -4819,8 +4715,6 @@ ORDER BY 2 DESC;
 ```
 
 </details>
-
-[Run live query F4](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F4)
 
 **Choice exists, it is worth a great deal, and both vary sharply by what you are
 borrowing for.**
@@ -4836,7 +4730,7 @@ borrowing against a house they already own faces a market three times harder tha
 a buyer, with half as many lenders in it.**
 
 **The median lender is more generous than the market** on every purpose: 8.27
-against 10.78 on home purchase, 26.11 against 35.13 on home improvement, 17.16
+against 10.78 on home purchase, 26.11 against 35.13 on home improvement, 17.15
 against 20.45 on refinancing. The market rate is weighted by volume, so the
 largest lenders deny more often than the median lender does.
 
@@ -4849,9 +4743,9 @@ of 31 to 60. Choice is not theoretical even at neighbourhood level; it is just
 invisible.
 
 
-### The recommendations
+### The Recommendations
 
-#### For applicants
+#### For Applicants
 
 **1. Keep total debt service under 50 percent of income, and stop optimising
 below 20.** This is the only hard threshold in the register. From 20 to 49
@@ -4907,7 +4801,7 @@ first three, which are measured against outcomes.
 Evidence: [Section D](#d-mortgage-denial-analysis), as citation frequency rather
 than effect.
 
-#### For lenders
+#### For Lenders
 
 All process and reporting observations. None touches an applicant
 characteristic, protected or otherwise.
@@ -4947,7 +4841,7 @@ often, which is a documentation and hand-holding difference rather than a credit
 one.
 Evidence: [D2](#d2-denial-reason-by-loan-type).
 
-#### For communities and for anyone teaching this
+#### For Communities and for Anyone Teaching This
 
 **1. The 50 percent debt-to-income line is the single most teachable fact in the
 register, and it is not what people are usually told.** The common advice is to
@@ -4978,7 +4872,7 @@ to credit history rather than to cash.
 
 ---
 
-## The data model
+## The Data Model
 
 <details>
 <summary><b>99 flat columns modelled into 17 tables and 175 documented columns</b></summary>
@@ -4987,32 +4881,56 @@ The published HMDA Loan Application Register is one flat file of 99 columns. It
 is modelled here into a dimensional warehouse of 17 tables across two schemas.
 
 `marts` holds the analytical model: a fact table partitioned by `activity_year`,
-seven dimensions, two bridge tables and a quarantine table. `ref` holds the
-reference data, including the code-to-label lookups the regulator publishes and
-a county reference table built for this project.
+eight dimensions, four bridge tables and a quarantine table. `ref` holds the
+reference data: the code-to-label lookups the regulator publishes, the vintage
+record for each filing year, and the assertion catalogue.
 
 **`marts.fct_application`** is the grain of the whole model: one row per
 application, 1,755,419 of them across four years, of which 1,596,676 remain once
-purchased loans are excluded.
+purchased loans are excluded. It carries 41 columns.
 
-**The dimensions** are `dim_applicant_profile`, `dim_loan_product`,
-`dim_institution`, `dim_county`, `dim_tract`, `dim_msa` and `dim_date`.
+**The eight dimensions** are `dim_applicant_profile` (4,745 rows),
+`dim_loan_product` (194), `dim_dwelling` (41), `dim_institution` (19,321),
+`dim_county` (255), `dim_tract` (20,820), `dim_msa` (1,666) and `dim_date` (4).
+`dim_loan_product` and `dim_dwelling` are junk dimensions: they collapse seven
+and four coded attributes respectively into the combinations that actually
+occur, which is why a loan's type, purpose, lien status and reverse-mortgage
+flag resolve through one surrogate key rather than four joins.
 
-**The two bridge tables** carry the one-to-many parts the flat file folds into
-repeated columns. `br_denial_reason` holds up to four denial reasons per
-application, which is why [Section D](#d-mortgage-denial-analysis) counts
-citations rather than applications. `br_application_race` does the same for the
-up-to-five race fields.
+**The four bridge tables** carry the one-to-many parts the flat file folds into
+repeated columns, which is the modelling decision the register most obviously
+demands and most obviously resists. `br_denial_reason` holds up to four denial
+reasons per application, 438,591 rows, which is why
+[Section D](#d-mortgage-denial-analysis) counts citations rather than
+applications. `br_application_race` does the same for the up-to-five race fields
+for both applicant and co-applicant, 3,662,829 rows.
+`br_application_ethnicity` and `br_underwriting_system` complete the set.
 
 **`marts.quarantine_application`** holds 573 rows that failed a validation rule,
 each stored with the rule it broke rather than silently dropped.
 
-**`ref.ref_code`** carries the regulator's code-to-label mappings, which is why
-no query on this page writes a label like 'Home purchase' into a `CASE`
-statement. **`ref.ref_county`** was built for this project because the register
-contains county FIPS codes and no county names at all; all 62 New York counties
-join, and the names were cross-checked against two independent published
-sources.
+**`ref.ref_code`** carries the regulator's 450 code-to-label mappings, which is
+why no query on this page writes a label like 'Home purchase' into a `CASE`
+statement. **`ref.ref_source_vintage`** records which published file each year
+came from and when it was frozen, which is what
+[Section B](#b-mortgage-market-trends-year-on-year) relies on when it says the
+four years are not equally complete. **`ref.assertion_catalog`** holds the
+quality rules and their thresholds.
+
+The register carries county FIPS codes and no county names at all, and there is
+no county-name reference table here. The 62 names are supplied inline in
+[A6](#a6-the-ten-most-expensive-census-tracts) and
+[A7](#a7-the-ten-most-expensive-counties) as a `VALUES` list, which keeps those
+queries runnable anywhere the fact table is and puts the mapping in front of the
+reader rather than behind a join. All 62 codes match, which is also the check
+that restricting to codes beginning 36 captures the whole state.
+
+**The browser gets 40 of the fact table's 41 columns.** `row_hash`, the
+`md5(row::text)` key the surrogate keys and the uniqueness assertion are built
+on, was 42 percent of the Parquet export: 30.5 MB of hex digest that no query
+can read. Holding it back took the download from 82.0 MiB to 52.9 MiB and
+changed no published figure. Every analytical column is still there, including
+the ones no query on this page uses.
 
 The **[data dictionary](https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/catalog/)** documents all 175 columns and is
 generated from the database catalog at build time rather than written by hand,
@@ -5023,7 +4941,7 @@ relationships.
 
 ---
 
-## Where the data comes from
+## Where the Data Comes From
 
 <details>
 <summary><b>FFIEC HMDA Loan Application Register, New York State, 2022 to 2025</b></summary>
@@ -5053,7 +4971,7 @@ why.
 
 ---
 
-## How the numbers are checked
+## How the Numbers Are Checked
 
 <details>
 <summary><b>Forty-two queries verified to return identical results in PostgreSQL and DuckDB</b></summary>
@@ -5063,17 +4981,39 @@ analysis is developed against PostgreSQL and the browser playground runs DuckDB
 over a Parquet export of the same data. An automated parity test runs all
 forty-two queries in both and fails if any cell differs.
 
-That test has already changed a published figure once. A median interest rate
-interpolated between two loans on an even-sized group of 288, and the two engines
-landed either side of the third decimal: 6.657 against 6.656. The fix was to use
-`percentile_disc` rather than `percentile_cont`, which returns a rate a borrower
-actually paid instead of a midpoint between two of them, and is exact in both
-engines. Every median on this page now uses it.
+That test has changed published figures twice, and neither difference raised an
+error in either engine.
 
-**Exact decimal arithmetic.** Every percentage casts to `DECIMAL(24,8)` before
-dividing. Floating-point division produces engine-specific results in the last
-place, which is exactly what a parity test catches and exactly what a reader
-should not have to think about.
+**A median interest rate interpolated between two loans** on an even-sized group
+of 288, and the two engines landed either side of the third decimal: 6.657
+against 6.656. The fix was `percentile_disc` rather than `percentile_cont`, which
+returns a rate a borrower actually paid instead of a midpoint between two of
+them. Every median on this page now uses it.
+
+**`NUMERIC` is not the same type in the two engines.** In DuckDB it is an alias
+for `DECIMAL(18,3)`, three decimal places; in PostgreSQL it is arbitrary
+precision. So `round(CAST(x AS numeric), 2)` rounds twice in one engine and once
+in the other, and a value with a 5 in the third decimal comes out differently:
+17.154582763337893 became 17.155 and then 17.16, against 17.15. Four figures on
+this page were affected. All sixty-one casts in these queries now name the
+precision, `CAST(x AS DECIMAL(24,8))`, which means the same thing in both. The
+general lesson is that an unqualified type name is not a portable type.
+
+**Exact decimal arithmetic, with the precision stated.** Every percentage casts
+to `DECIMAL(24,8)` before dividing, and every median casts to `DECIMAL(24,8)`
+before rounding. Floating-point division produces engine-specific results in the
+last place, and an unqualified `numeric` is three decimal places in one of the
+two engines, which is exactly what a parity test catches and exactly what a
+reader should not have to think about.
+
+**Row order is determined, not left to the engine.** `ORDER BY` on a text column
+depends on the collation: PostgreSQL uses the database collation, DuckDB sorts
+by bytes. Where a sort can tie, which in Section E is hundreds of lenders on a
+single application, the tiebreaker is the LEI rather than the lender's name,
+because an LEI is twenty characters of `[A-Z0-9]` and sorts the same under any
+collation. Every query was then checked for order stability by running it at one
+thread and at eight, which changes the scan order into the sort: all forty-two
+return an identical row order.
 
 **Every table reconciles to A1.** Sections A, C, D, E and F each sum to 1,596,676
 applications, 951,371 originated loans and 371,417,740,000 dollars where the
@@ -5096,7 +5036,7 @@ and by group, so the tables that need it hold product constant and say so.
 
 ---
 
-## Three things this repository does differently
+## Three Things This Repository Does Differently
 
 <details>
 <summary><b>Every query runs in your browser, every column is documented from the catalog, every figure reconciles</b></summary>
@@ -5121,7 +5061,7 @@ grouped on different things, and the two are compared.
 
 ## Author
 
-**Samuel Babajide** · [LinkedIn](https://www.linkedin.com/in/samuelbabajide/) · [Website](https://samuelbabajide.github.io/)
+**Samuel Babajide** · [LinkedIn](https://www.linkedin.com/in/samuelbbabajide) · [Website](https://samuelbabajide.github.io/)
 
 Source: Federal Financial Institutions Examination Council, HMDA Loan
 Application Register, New York State, 2022 to 2025.

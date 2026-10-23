@@ -95,4 +95,4 @@ JOIN lender l ON l.lei = f.lei
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;

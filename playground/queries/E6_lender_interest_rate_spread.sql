@@ -85,21 +85,21 @@ SELECT l.lender_name,
        COALESCE(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0) AS total_loan_amount,
        round(CAST(percentile_disc(0.10) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)  AS p10_interest_rate,
+             AS DECIMAL(24,8)), 3)    AS p10_interest_rate,
        round(CAST(percentile_disc(0.25) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)  AS p25_interest_rate,
+             AS DECIMAL(24,8)), 3)    AS p25_interest_rate,
        round(CAST(percentile_disc(0.50) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)AS median_interest_rate,
+             AS DECIMAL(24,8)), 3)AS median_interest_rate,
        round(CAST(percentile_disc(0.75) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)  AS p75_interest_rate,
+             AS DECIMAL(24,8)), 3)    AS p75_interest_rate,
        round(CAST(percentile_disc(0.90) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS numeric), 3)  AS p90_interest_rate
+             AS DECIMAL(24,8)), 3)    AS p90_interest_rate
 FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 3 DESC;
+ORDER BY 3 DESC, l.lei;

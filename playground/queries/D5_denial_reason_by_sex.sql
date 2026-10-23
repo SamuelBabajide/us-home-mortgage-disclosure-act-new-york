@@ -36,13 +36,13 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')              AS denial_reason,
        count(*)             AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Male') AS DECIMAL(24,8))
-             / CAST(max(n.apps_male) AS DECIMAL(24,8)), 2)              AS male_per_100,
+             / CAST(max(n.apps_male) AS DECIMAL(24,8)), 2)              AS male,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Female') AS DECIMAL(24,8))
-             / CAST(max(n.apps_female) AS DECIMAL(24,8)), 2)            AS female_per_100,
+             / CAST(max(n.apps_female) AS DECIMAL(24,8)), 2)            AS female,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Joint') AS DECIMAL(24,8))
-             / CAST(max(n.apps_joint) AS DECIMAL(24,8)), 2)             AS joint_per_100,
+             / CAST(max(n.apps_joint) AS DECIMAL(24,8)), 2)             AS joint,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = 'Sex Not Available') AS DECIMAL(24,8))
-             / CAST(max(n.apps_sex_not_available) AS DECIMAL(24,8)), 2) AS sex_not_available_per_100
+             / CAST(max(n.apps_sex_not_available) AS DECIMAL(24,8)), 2) AS sex_not_available
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())

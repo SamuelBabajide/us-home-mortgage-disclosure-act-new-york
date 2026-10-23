@@ -39,15 +39,15 @@ SELECT l.lender_name,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken IN ('1','2','3','7','8')
                             THEN f.loan_to_value_ratio END)
-             AS numeric), 2)                                                AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                         AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken IN ('1','2','3','7','8') AND f.income_thousands > 0
                             THEN f.loan_amount / (f.income_thousands * 1000) END)
-             AS numeric), 2)                                                AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                         AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken IN ('1','2','3','7','8') AND f.income_thousands > 0
                             THEN f.income_thousands * 1000 END)
-             AS numeric))                                                   AS median_applicant_income
+             AS DECIMAL(24,8)))                                            AS median_applicant_income
 FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
@@ -57,4 +57,4 @@ WHERE f.action_taken <> '6'
   AND p.loan_type    = '1'
 GROUP BY l.lei, l.lender_name
 HAVING count(*) >= 2000
-ORDER BY denial_rate;
+ORDER BY denial_rate, l.lei;

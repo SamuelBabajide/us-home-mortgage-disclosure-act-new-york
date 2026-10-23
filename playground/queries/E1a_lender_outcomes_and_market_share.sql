@@ -86,4 +86,4 @@ FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
 GROUP BY l.lei, l.lender_name
-ORDER BY 2 DESC;
+ORDER BY 2 DESC, l.lei;

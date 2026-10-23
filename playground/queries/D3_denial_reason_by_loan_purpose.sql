@@ -38,17 +38,17 @@ denied AS (
 SELECT COALESCE(d.denial_reason, 'All reasons')             AS denial_reason,
        count(*)            AS reason_occurrences,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '1') AS DECIMAL(24,8))
-             / CAST(max(n.apps_home_purchase) AS DECIMAL(24,8)), 2)    AS home_purchase_per_100,
+             / CAST(max(n.apps_home_purchase) AS DECIMAL(24,8)), 2)    AS home_purchase,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '31') AS DECIMAL(24,8))
-             / CAST(max(n.apps_refinancing) AS DECIMAL(24,8)), 2)      AS refinancing_per_100,
+             / CAST(max(n.apps_refinancing) AS DECIMAL(24,8)), 2)      AS refinancing,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '32') AS DECIMAL(24,8))
-             / CAST(max(n.apps_cash_out_refi) AS DECIMAL(24,8)), 2)    AS cash_out_refi_per_100,
+             / CAST(max(n.apps_cash_out_refi) AS DECIMAL(24,8)), 2)    AS cash_out_refi,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '2') AS DECIMAL(24,8))
-             / CAST(max(n.apps_home_improvement) AS DECIMAL(24,8)), 2) AS home_improvement_per_100,
+             / CAST(max(n.apps_home_improvement) AS DECIMAL(24,8)), 2) AS home_improvement,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '4') AS DECIMAL(24,8))
-             / CAST(max(n.apps_other_purpose) AS DECIMAL(24,8)), 2)    AS other_purpose_per_100,
+             / CAST(max(n.apps_other_purpose) AS DECIMAL(24,8)), 2)    AS other_purpose,
        round(CAST(100.0 * count(*) FILTER (WHERE d.grp = '5') AS DECIMAL(24,8))
-             / CAST(max(n.apps_not_applicable) AS DECIMAL(24,8)), 2)   AS not_applicable_per_100
+             / CAST(max(n.apps_not_applicable) AS DECIMAL(24,8)), 2)   AS not_applicable
 FROM denied d
 CROSS JOIN denominator n
 GROUP BY GROUPING SETS ((d.denial_reason), ())

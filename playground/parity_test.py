@@ -9,8 +9,27 @@ the README return the same numbers in both engines". That promise is
 easy to make and easy to break silently, because the two engines disagree in
 places where neither raises an error.
 
-The difference that motivated this script: PostgreSQL's ~ operator is a
-PARTIAL regex match, DuckDB's is a FULL match. So
+Three differences this script has actually caught are worth naming, because none
+of them raises an error in either engine.
+
+**NUMERIC is not the same type in the two engines.** In DuckDB, NUMERIC is an
+alias for DECIMAL(18,3): three decimal places. In PostgreSQL it is arbitrary
+precision. So round(CAST(x AS numeric), 2) rounds twice in DuckDB and once in
+PostgreSQL, and any value with a 5 in the third decimal comes out differently:
+17.154582... becomes 17.155 and then 17.16, against PostgreSQL's 17.15. Four
+published figures were wrong in the browser because of this. Every cast in the
+published queries now names DECIMAL(24,8) explicitly, which means the same thing
+in both engines, and round() on it is half-away-from-zero in both.
+
+**ORDER BY on text is collation-dependent.** PostgreSQL uses the database
+collation, case-insensitive on a normal install; DuckDB sorts by bytes. With
+hundreds of lenders tied at the bottom on one application, a tiebreaker on
+lender_name put 'b1BANK' in a different place in each engine. Section E and F3
+break their ties on lei instead, 20 characters of [A-Z0-9], which sorts
+identically under any collation.
+
+**The ~ operator is a PARTIAL regex match in PostgreSQL and a FULL match in
+DuckDB.** So
 
     WHERE race_code ~ '^[1-5]'
 
@@ -49,14 +68,35 @@ ENV = {**os.environ, "PGCLIENTENCODING": "UTF8"}
 DECIMALS = 6
 
 
+# psql's field separator. \x1f, the ASCII unit separator, cannot occur in any
+# value here, which is why it was chosen. It is also, unhelpfully, whitespace as
+# far as Python is concerned: '\x1f'.isspace() is True, because Unicode classes
+# U+001C to U+001F as whitespace. So calling .strip() on psql's stdout silently
+# removes the trailing field separators of the LAST line, and a final row ending
+# in NULLs comes back with those columns missing rather than empty. That turned
+# three correct queries into parity failures, all of them on row 1139, the one
+# lender with no rate and no amounts. Nothing here calls strip() on a whole
+# result any more.
+SEP = "\x1f"
+
+# NULL is printed as a sentinel rather than as an empty field, so an empty
+# string and a NULL can never be confused and no field is ever zero-length. It
+# is normalised back to "" alongside DuckDB's None.
+PG_NULL = "<[NULL]>"
+
+
 def run_postgres(sql):
     out = subprocess.run(
         ["psql", "-h", PGHOST, "-p", PGPORT, "-U", PGUSER, "-d", PGDB,
-         "-X", "-A", "-t", "-F", "\x1f", "-q", "-v", "ON_ERROR_STOP=1", "-c", sql],
+         "-X", "-A", "-t", "-F", SEP, "-P", f"null={PG_NULL}",
+         "-q", "-v", "ON_ERROR_STOP=1", "-c", sql],
         capture_output=True, text=True, env=ENV)
     if out.returncode != 0:
         raise RuntimeError(out.stderr.strip())
-    return [line.split("\x1f") for line in out.stdout.strip().splitlines() if line]
+    # splitlines on the raw text, and drop only genuinely blank lines. A line of
+    # nothing but separators is a real row of NULLs and must survive.
+    return [line.split(SEP) for line in out.stdout.splitlines()
+            if line.strip(" \t\r\n")]
 
 
 def run_duckdb(con, sql):
@@ -70,8 +110,8 @@ def normalise(rows):
     for row in rows:
         cells = []
         for v in row:
-            v = v.strip()
-            if v in ("", "None", "NULL"):
+            v = v.strip(" \t\r\n")
+            if v in ("", "None", "NULL", PG_NULL):
                 cells.append("")
                 continue
             try:
@@ -82,18 +122,65 @@ def normalise(rows):
     return out
 
 
-def load_bootstrap(con):
+def parquet_dir():
+    """Where the Parquet export is, as a path bootstrap.sql can be pointed at.
+
+    export_parquet.py writes to parquet/, which is gitignored, so a fresh clone
+    does not have it and producing it means a PostgreSQL rebuild from the 638 MB
+    of raw registers. The published copies in ../docs/playground/data are
+    committed and are what the live site serves, so they are the fallback: the
+    test then checks the engine against the bytes a visitor actually downloads,
+    which is the more useful comparison of the two.
+    """
+    for d in ("parquet", os.path.join("..", "docs", "playground", "data")):
+        if pathlib.Path(d, "fct_application_2022.parquet").is_file():
+            return d
+    sys.exit("no Parquet export found. Looked in parquet/ and "
+             "../docs/playground/data/. Run export_parquet.py first.")
+
+
+def load_bootstrap(con, where):
     """Create the marts / ref views over the local Parquet export.
 
     bootstrap.sql points at data/, which is where build_page.py puts the files
-    in the published site. Before that build they are still in parquet/, so the
-    paths are rewritten here. Keeping one bootstrap.sql rather than two is the
-    whole point: the views the test checks are the views the site serves.
+    in the published site, so the paths are rewritten to wherever the export
+    actually is. Keeping one bootstrap.sql rather than two is the whole point:
+    the views the test checks are the views the site serves.
     """
     sql = pathlib.Path("bootstrap.sql").read_text()
-    if not pathlib.Path("parquet").is_dir():
-        sys.exit("no parquet/ directory. Run export_parquet.py first.")
-    con.execute(sql.replace("'data/", "'parquet/").replace('"data/', '"parquet/'))
+    prefix = where.replace(os.sep, "/").rstrip("/") + "/"
+    con.execute(sql.replace("'data/", f"'{prefix}").replace('"data/', f'"{prefix}'))
+
+
+# Columns held back from the Parquet export, which must therefore differ between
+# the two engines. Anything else differing is a real failure. This mirrors
+# EXCLUDE in export_parquet.py and is checked rather than trusted, so dropping a
+# column from the export without recording it here fails the test.
+EXPORT_OMITS = {"marts.fct_application": ["row_hash"]}
+
+
+def check_export_shape(con):
+    """The exported tables must match PostgreSQL column for column, except for
+    the columns deliberately held back."""
+    bad = []
+    for qualified, omitted in EXPORT_OMITS.items():
+        schema, table = qualified.split(".")
+        cols = ("SELECT column_name FROM information_schema.columns "
+                f"WHERE table_schema = '{schema}' AND table_name = '{table}' "
+                "ORDER BY column_name")
+        pg = [r[0] for r in run_postgres(cols)]
+        dk = [r[0] for r in run_duckdb(con, cols)]
+        missing = [c for c in pg if c not in dk]
+        extra = [c for c in dk if c not in pg]
+        if sorted(missing) == sorted(omitted) and not extra:
+            print(f"  ok     {qualified}  ({len(dk)} of {len(pg)} columns exported, "
+                  f"holding back {', '.join(omitted)})")
+        else:
+            bad.append((qualified,
+                        f"expected the export to omit {omitted}; it omits {missing}"
+                        + (f" and adds {extra}" if extra else "")))
+            print(f"  DIFFER {qualified}")
+    return bad
 
 
 # Views are compared on row count and column count rather than on every row,
@@ -132,10 +219,15 @@ def check_views(con):
 
 
 def main():
+    where = parquet_dir()
+    print(f"parquet: {where}")
     con = duckdb.connect()
-    load_bootstrap(con)
+    load_bootstrap(con, where)
 
-    print("views:")
+    print("\nexport shape:")
+    failures_shape = check_export_shape(con)
+
+    print("\nviews:")
     failures_views = check_views(con)
     print("\nqueries:")
 
@@ -143,7 +235,7 @@ def main():
     if not files:
         sys.exit("no queries found in queries/")
 
-    failures = list(failures_views)
+    failures = failures_shape + failures_views
     for path in files:
         sql = open(path).read()
         name = os.path.basename(path)
@@ -158,6 +250,12 @@ def main():
         except Exception as e:
             failures.append((name, f"duckdb error: {str(e).splitlines()[0]}"))
             print(f"  ERROR  {name}  (duckdb)")
+            continue
+
+        widths = {len(r) for r in pg + dk}
+        if len(widths) > 1:
+            failures.append((name, f"column counts differ between rows: {sorted(widths)}"))
+            print(f"  ERROR  {name}  (ragged: {sorted(widths)} columns)")
             continue
 
         if pg == dk:
