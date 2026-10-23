@@ -1,0 +1,414 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mortgage lending in New York</title>
+<style>
+  /* ---- validated palette -------------------------------------------------
+     Categorical marks, checked with the dataviz validator against the deep
+     navy surface in dark mode: lightness band, chroma floor, CVD separation,
+     normal-vision floor and contrast vs surface all pass.
+       gold  #B48706   blue #3E84C8   red #C24A42   teal #06999A
+     Text wears text tokens, never a series colour; a brighter gold is used for
+     display numerals, where the gate is contrast rather than the mark band. */
+  :root{
+    --surface:#0B1B2B; --panel:#122738; --panel-2:#16324A; --rule:#24415C;
+    --ink:#EDF3F8; --ink-2:#A8BECF; --ink-3:#71909F;
+    --gold:#B48706; --gold-text:#E3B341; --blue:#3E84C8; --red:#C24A42; --teal:#06999A;
+    --ff:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+  @page{ size:720pt 720pt; margin:0 }
+  *{ box-sizing:border-box; margin:0; padding:0 }
+  html,body{ background:#000 }
+  body{ font-family:var(--ff); -webkit-font-smoothing:antialiased }
+
+  .slide{
+    width:720pt; height:720pt; color:var(--ink);
+    background-color:var(--surface);
+    background-image:linear-gradient(0deg,rgba(11,27,43,.955),rgba(11,27,43,.955)),url(hero.jpg);
+    background-size:cover,cover; background-position:center,center; background-repeat:no-repeat;
+    padding:52pt 56pt; position:relative; overflow:hidden;
+    page-break-after:always; break-after:page; display:flex; flex-direction:column;
+  }
+  .slide:last-child{ page-break-after:auto; break-after:auto }
+  /* cover: the picture carries the right-hand half, text holds the left */
+  .slide.cover{
+    background-image:
+      linear-gradient(to bottom,rgba(11,27,43,0) 54%,rgba(11,27,43,.62) 80%,rgba(11,27,43,.93) 100%),
+      linear-gradient(100deg,rgba(11,27,43,.95) 0%,rgba(11,27,43,.90) 36%,
+                      rgba(11,27,43,.46) 64%,rgba(11,27,43,.14) 100%),
+      url(hero.jpg);
+    background-size:cover,cover,cover }
+  .slide.close{
+    background-image:
+      linear-gradient(100deg,rgba(11,27,43,.975) 0%,rgba(11,27,43,.955) 52%,rgba(11,27,43,.72) 100%),
+      url(hero.jpg);
+    background-size:cover,cover }
+
+  /* a thin gold rule along the top edge ties the ten slides together */
+  .slide::before{ content:""; position:absolute; top:0; left:0; right:0; height:4pt;
+    background:linear-gradient(90deg,var(--gold) 0 38%,var(--blue) 38% 72%,var(--red) 72% 100%) }
+
+  .kicker{ font-size:11pt; letter-spacing:.34em; text-transform:uppercase;
+    color:var(--gold-text); font-weight:700; margin-bottom:16pt }
+  h1{ font-size:52pt; line-height:1.04; letter-spacing:-.018em; font-weight:700 }
+  h2{ font-size:34pt; line-height:1.08; letter-spacing:-.014em; font-weight:700; margin-bottom:6pt }
+  .sub{ font-size:15pt; line-height:1.5; color:var(--ink-2); max-width:540pt; margin-top:14pt }
+  .foot{ margin-top:auto; display:flex; justify-content:space-between; align-items:flex-end;
+    gap:28pt;
+    font-size:11.5pt; color:var(--ink-3); border-top:1pt solid var(--rule); padding-top:14pt }
+  .foot b{ color:var(--ink-2); font-weight:600 }
+  .foot span:first-child{ max-width:430pt }
+  .foot span:last-child{ white-space:nowrap; flex:0 0 auto }
+  .note{ font-size:12pt; line-height:1.55; color:var(--ink-2); margin-top:auto; padding-top:18pt;
+    border-top:1pt solid var(--rule) }
+  .note b{ color:var(--ink) }
+
+  /* ---- hero numerals ---- */
+  .heroes{ display:flex; gap:30pt; margin-top:34pt }
+  .heroes.low{ margin-top:auto; margin-bottom:34pt }
+  .cover .heroes.low{ flex-direction:column; gap:20pt; max-width:400pt }
+  .cover .hero{ display:flex; align-items:baseline; gap:16pt }
+  .cover .hero .n{ font-size:36pt; min-width:196pt }
+  .cover .hero .l{ margin-top:0; font-size:12.5pt }
+  .hero{ flex:1 }
+  .hero .n{ font-size:40pt; font-weight:700; letter-spacing:-.02em; color:var(--gold-text);
+    font-variant-numeric:tabular-nums; line-height:1 }
+  .hero .l{ font-size:11.5pt; color:var(--ink-2); margin-top:8pt; line-height:1.4 }
+
+  /* ---- stat tiles ---- */
+  .tiles{ display:grid; gap:14pt; margin:28pt 0 auto }
+  .t3{ grid-template-columns:repeat(3,1fr) }
+  .t2{ grid-template-columns:repeat(2,1fr) }
+  .tile{ background:var(--panel); border-radius:8pt; padding:26pt 22pt 24pt;
+    border-left:3pt solid var(--gold) }
+  .tile.b{ border-left-color:var(--blue) }
+  .tile.r{ border-left-color:var(--red) }
+  .tile .n{ font-size:30pt; font-weight:700; letter-spacing:-.02em; color:var(--ink);
+    font-variant-numeric:tabular-nums; line-height:1.05 }
+  .tile .n .u{ font-size:17pt; color:var(--ink-2); font-weight:600 }
+  .tile .l{ font-size:10.5pt; color:var(--ink-3); margin-top:9pt; letter-spacing:.04em;
+    text-transform:uppercase; line-height:1.35 }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:10pt; margin-top:22pt }
+  .chip{ background:var(--panel); border-radius:6pt; padding:16pt 18pt; flex:1 0 auto }
+  .chip .n{ font-size:23pt; font-weight:700; color:var(--gold-text); font-variant-numeric:tabular-nums }
+  .chip .l{ font-size:9.5pt; color:var(--ink-3); margin-top:5pt; text-transform:uppercase; letter-spacing:.05em }
+
+  /* ---- data table with an inline bar ---- */
+  table{ width:100%; border-collapse:collapse; margin:30pt 0 auto; font-variant-numeric:tabular-nums }
+  th{ font-size:9.5pt; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-3);
+    font-weight:600; text-align:right; padding:0 0 10pt; border-bottom:1pt solid var(--rule) }
+  th:first-child{ text-align:left }
+  td{ font-size:16pt; padding:19pt 0; text-align:right; border-bottom:1pt solid #1A3047 }
+  td:first-child{ text-align:left; font-weight:600 }
+  tr.total td{ border-bottom:none; border-top:2pt solid var(--gold); color:var(--gold-text);
+    font-weight:700; padding-top:13pt }
+  .bar{ height:9pt; background:var(--gold); border-radius:0 4pt 4pt 0; display:block }
+  .barcell{ width:118pt; padding-right:14pt !important }
+
+  /* ---- ranked horizontal bars: one series, direct-labelled, no legend ---- */
+  .rank{ margin-top:18pt; display:flex; flex-direction:column; gap:16pt;
+    flex:1; justify-content:center }
+  .row{ display:grid; grid-template-columns:210pt 1fr 84pt 96pt;
+    align-items:center; gap:14pt }
+  .row .cat{ font-size:13.5pt; font-weight:600; line-height:1.25 }
+  .row .cat small{ display:block; font-size:10.5pt; font-weight:400; color:var(--ink-3);
+    margin-top:3pt; font-variant-numeric:tabular-nums }
+  .row .track{ height:28pt; background:#16293C; border-radius:3pt; position:relative }
+  .row .fill{ position:absolute; left:0; top:0; bottom:0; background:var(--gold);
+    border-radius:3pt 4pt 4pt 3pt }
+  .row.b .fill{ background:var(--blue) }
+  .row.d .fill{ background:var(--ink-3) }
+  .row .pct{ font-size:15pt; font-weight:700; text-align:right; font-variant-numeric:tabular-nums }
+  .row .amt{ font-size:13pt; color:var(--ink-2); text-align:right;
+    font-variant-numeric:tabular-nums; white-space:nowrap }
+  
+  .rhead{ display:grid; grid-template-columns:210pt 1fr 84pt 96pt; gap:14pt;
+    font-size:9.5pt; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-3);
+    font-weight:600; border-bottom:1pt solid var(--rule); padding-bottom:9pt; margin-top:20pt }
+  .rhead span:nth-child(3),.rhead span:nth-child(4),.rhead span:nth-child(5){ text-align:right }
+
+  /* ---- numbered recommendations ---- */
+  .recs{ margin-top:22pt; display:flex; flex-direction:column; gap:18pt;
+    flex:1; justify-content:center }
+  .rec{ display:grid; grid-template-columns:44pt 1fr; gap:17pt; background:var(--panel);
+    border-radius:8pt; padding:19pt 21pt }
+  .rec .num{ font-size:30pt; font-weight:700; color:var(--gold-text); line-height:.9 }
+  .rec h3{ font-size:17.5pt; font-weight:700; line-height:1.22; margin-bottom:8pt }
+  .rec p{ font-size:12.5pt; line-height:1.52; color:var(--ink-2) }
+  .rec p b{ color:var(--ink); font-weight:700 }
+
+  .bullets{ margin-top:24pt; display:flex; flex-direction:column; gap:20pt;
+    flex:1; justify-content:center }
+  .bullet{ padding-left:17pt; border-left:3pt solid var(--blue) }
+  .bullet h4{ font-size:14.5pt; font-weight:700; margin-bottom:5pt }
+  .bullet p{ font-size:12.5pt; line-height:1.5; color:var(--ink-2) }
+  .bullet.g{ border-left-color:var(--gold) }
+  .bullet.r{ border-left-color:var(--red) }
+
+  .links{ display:flex; flex-wrap:wrap; gap:10pt; margin-top:24pt }
+  .link{ background:var(--panel-2); border-radius:6pt; padding:13pt 17pt; font-size:12.5pt;
+    color:var(--ink); font-weight:600 }
+  .link span{ color:var(--gold-text) }
+  .stack{ font-size:11pt; color:var(--ink-3); line-height:1.75; margin-top:16pt }
+  .url{ display:block; margin-top:auto; font-size:15pt; font-weight:700; color:var(--gold-text);
+    letter-spacing:-.01em; padding-top:24pt }
+  .stack b{ color:var(--ink-2); font-weight:600 }
+  a{ color:inherit; text-decoration:none }
+  .big{ color:var(--gold-text); font-weight:700 }
+  .rec p b.red, .note b.red, .red{ color:#E0756A; font-weight:700 }
+</style>
+
+<!-- 1 ───────────────────────────────────────────────── title -->
+<section class="slide cover">
+  <div class="kicker">A SQL portfolio project</div>
+  <h1>Mortgage lending<br>in New York</h1>
+  <p class="sub">Every mortgage application filed in New York State over four years, as
+  the lenders reported it. Modelled in PostgreSQL, analysed in forty-two queries,
+  and runnable in your browser without installing anything.</p>
+  <div class="heroes low">
+    <div class="hero"><div class="n">1,596,676</div><div class="l">applications decided</div></div>
+    <div class="hero"><div class="n">951,371</div><div class="l">loans originated</div></div>
+    <div class="hero"><div class="n">$371.4bn</div><div class="l">disbursed</div></div>
+  </div>
+  <div class="foot"><span><b>Samuel Babajide</b> · HMDA, New York State, 2022 to 2025</span>
+    <span>swipe →</span></div>
+</section>
+
+<!-- 2 ───────────────────────────────────────────────── year on year -->
+<section class="slide">
+  <div class="kicker">The market</div>
+  <h2>Four years, year on year</h2>
+  <table>
+    <tr><th>Year</th><th class="barcell">Applications</th><th></th><th>Originated</th>
+        <th>Disbursed</th><th>Approval</th><th>Denial</th></tr>
+    <tr><td>2022</td><td class="barcell"><span class="bar" style="width:118pt"></span></td>
+        <td>500,553</td><td>307,252</td><td>$128.5bn</td><td>64.39%</td><td>18.69%</td></tr>
+    <tr><td>2023</td><td class="barcell"><span class="bar" style="width:81.8pt"></span></td>
+        <td>346,943</td><td>203,072</td><td>$72.7bn</td><td>61.72%</td><td>21.68%</td></tr>
+    <tr><td>2024</td><td class="barcell"><span class="bar" style="width:83.7pt"></span></td>
+        <td>355,249</td><td>208,814</td><td>$76.9bn</td><td>61.94%</td><td>21.02%</td></tr>
+    <tr><td>2025</td><td class="barcell"><span class="bar" style="width:92.9pt"></span></td>
+        <td>393,931</td><td>232,233</td><td>$93.3bn</td><td>62.71%</td><td>19.63%</td></tr>
+    <tr class="total"><td>All four</td><td class="barcell"></td>
+        <td>1,596,676</td><td>951,371</td><td>$371.4bn</td><td>62.85%</td><td>20.09%</td></tr>
+  </table>
+  <div class="note"><b>Applications fell 30.7 percent from 2022 to 2023 and have recovered
+  13.5 percent since.</b> Approval bottomed in 2023 at 61.72 percent and denial peaked the
+  same year at 21.68. 2022 is a three-year file and 2025 is provisional, so the four
+  vintages are not equally complete.</div>
+</section>
+
+<!-- 3 ───────────────────────────────────────────────── the typical loan -->
+<section class="slide">
+  <div class="kicker">The typical loan</div>
+  <h2>What a New York mortgage<br>actually looks like</h2>
+  <div class="tiles t3">
+    <div class="tile"><div class="n">$127,000</div><div class="l">median applicant income</div></div>
+    <div class="tile"><div class="n">$475,000</div><div class="l">median property value</div></div>
+    <div class="tile"><div class="n">$245,000</div><div class="l">median loan amount</div></div>
+    <div class="tile b"><div class="n">75.00<span class="u">%</span></div><div class="l">median loan to value</div></div>
+    <div class="tile b"><div class="n">1.96<span class="u">×</span></div><div class="l">median loan to income</div></div>
+    <div class="tile b"><div class="n">6.281<span class="u">%</span></div><div class="l">median interest rate</div></div>
+  </div>
+  <div class="note"><b>Across the 951,371 loans that were actually made.</b> Every median
+  uses <b>percentile_disc</b>, which returns a value some borrower really had, rather than
+  interpolating between the two middle rows and reporting a figure nobody was charged.
+  That choice is also what makes these numbers identical in PostgreSQL and in the browser.</div>
+</section>
+
+<!-- 4 ───────────────────────────────────────────────── coverage -->
+<section class="slide">
+  <div class="kicker">Coverage</div>
+  <h2>What the register covers</h2>
+  <div class="chips">
+    <div class="chip"><div class="n">4</div><div class="l">Years</div></div>
+    <div class="chip"><div class="n">1,168</div><div class="l">Lenders</div></div>
+    <div class="chip"><div class="n">62</div><div class="l">of 62 counties</div></div>
+    <div class="chip"><div class="n">5,281</div><div class="l">Census tracts</div></div>
+  </div>
+  <div class="chips">
+    <div class="chip"><div class="n">4</div><div class="l">Loan types</div></div>
+    <div class="chip"><div class="n">6</div><div class="l">Loan purposes</div></div>
+    <div class="chip"><div class="n">4</div><div class="l">Sex values</div></div>
+    <div class="chip"><div class="n">9</div><div class="l">Race values</div></div>
+  </div>
+  <div class="rhead" style="grid-template-columns:186pt 1fr 118pt 88pt">
+    <span>Most expensive county</span><span></span><span>Median value</span><span>Loans</span></div>
+  <div class="rank">
+    <div class="row" style="grid-template-columns:186pt 1fr 118pt 88pt">
+      <div class="cat">New York County</div><div class="track"><div class="fill" style="width:100%"></div></div>
+      <div class="pct">$1,355,000</div><div class="amt">35,463</div></div>
+    <div class="row" style="grid-template-columns:186pt 1fr 118pt 88pt">
+      <div class="cat">Kings County</div><div class="track"><div class="fill" style="width:85.98%"></div></div>
+      <div class="pct">$1,165,000</div><div class="amt">53,975</div></div>
+    <div class="row" style="grid-template-columns:186pt 1fr 118pt 88pt">
+      <div class="cat">Queens County</div><div class="track"><div class="fill" style="width:59.41%"></div></div>
+      <div class="pct">$805,000</div><div class="amt">57,169</div></div>
+  </div>
+  <div class="note">All 62 New York counties appear. The raw column returns 66, because it
+  also carries an <b>UNKNOWN</b> value and three out-of-state codes filed against New York
+  property. Counting those would have claimed four counties that do not exist.</div>
+</section>
+
+<!-- 5 ───────────────────────────────────────────────── by race -->
+<section class="slide">
+  <div class="kicker">Applicant demographics</div>
+  <h2>Originated loans by<br>applicant race</h2>
+  <div class="rhead"><span>Race</span><span>Share of originations</span><span>Share</span><span>Disbursed</span></div>
+  <div class="rank">
+    <div class="row"><div class="cat">White<small>621,461 loans</small></div>
+      <div class="track"><div class="fill" style="width:100%"></div></div>
+      <div class="pct">65.32%</div><div class="amt">$198.2bn</div></div>
+    <div class="row d"><div class="cat">Race not available<small>161,122 loans</small></div>
+      <div class="track"><div class="fill" style="width:25.93%"></div></div>
+      <div class="pct">16.94%</div><div class="amt">$98.9bn</div></div>
+    <div class="row"><div class="cat">Asian<small>87,024 loans</small></div>
+      <div class="track"><div class="fill" style="width:14.01%"></div></div>
+      <div class="pct">9.15%</div><div class="amt">$44.1bn</div></div>
+    <div class="row"><div class="cat">Black or African American<small>58,130 loans</small></div>
+      <div class="track"><div class="fill" style="width:9.35%"></div></div>
+      <div class="pct">6.11%</div><div class="amt">$19.6bn</div></div>
+    <div class="row"><div class="cat">Joint<small>17,886 loans</small></div>
+      <div class="track"><div class="fill" style="width:2.88%"></div></div>
+      <div class="pct">1.88%</div><div class="amt">$8.9bn</div></div>
+    <div class="row d"><div class="cat">Four smaller categories<small>5,748 loans</small></div>
+      <div class="track"><div class="fill" style="width:0.92%"></div></div>
+      <div class="pct">0.60%</div><div class="amt">$1.7bn</div></div>
+  </div>
+  <div class="note"><b>The regulator's categories are never dropped here, including
+  "not available".</b> It is 16.94 percent of originations and 26.6 percent of the dollars,
+  so removing it would move every other share on this slide without saying so. The six
+  rows sum to 951,371 loans exactly.</div>
+</section>
+
+<!-- 6 ───────────────────────────────────────────────── by sex -->
+<section class="slide">
+  <div class="kicker">Applicant demographics</div>
+  <h2>Originated loans by<br>applicant sex</h2>
+  <div class="rhead"><span>Sex</span><span>Share of originations</span><span>Share</span><span>Disbursed</span></div>
+  <div class="rank">
+    <div class="row"><div class="cat">Joint<small>338,370 loans</small></div>
+      <div class="track"><div class="fill" style="width:100%"></div></div>
+      <div class="pct">35.57%</div><div class="amt">$130.9bn</div></div>
+    <div class="row"><div class="cat">Male<small>312,145 loans</small></div>
+      <div class="track"><div class="fill" style="width:92.24%"></div></div>
+      <div class="pct">32.81%</div><div class="amt">$111.9bn</div></div>
+    <div class="row"><div class="cat">Female<small>210,493 loans</small></div>
+      <div class="track"><div class="fill" style="width:62.21%"></div></div>
+      <div class="pct">22.13%</div><div class="amt">$59.6bn</div></div>
+    <div class="row d"><div class="cat">Sex not available<small>90,363 loans</small></div>
+      <div class="track"><div class="fill" style="width:26.71%"></div></div>
+      <div class="pct">9.50%</div><div class="amt">$69.0bn</div></div>
+  </div>
+  <div class="note"><b>Look at the last row twice.</b> "Sex not available" is 9.50 percent of
+  the loans and <b>18.57 percent of the dollars</b>, the only row where the two diverge
+  sharply, on a median loan of <b>$335,000</b> against $265,000 for joint applicants. These
+  are largely applications filed by a company rather than a household, which is why the
+  field is blank, and it is the clearest reason not to delete a "missing" category.</div>
+</section>
+
+<!-- 7 ───────────────────────────────────────────────── denial reasons -->
+<section class="slide">
+  <div class="kicker">Denial analysis</div>
+  <h2>The five reasons lenders<br>write down most</h2>
+  <div class="rhead" style="grid-template-columns:238pt 1fr 84pt 92pt">
+    <span>Reason cited</span><span>Share of all citations</span><span>Share</span><span>Citations</span></div>
+  <div class="rank">
+    <div class="row" style="grid-template-columns:238pt 1fr 84pt 92pt"><div class="cat">Debt-to-income ratio</div>
+      <div class="track"><div class="fill" style="width:100%"></div></div>
+      <div class="pct">32.87%</div><div class="amt">135,207</div></div>
+    <div class="row" style="grid-template-columns:238pt 1fr 84pt 92pt"><div class="cat">Credit history</div>
+      <div class="track"><div class="fill" style="width:66.05%"></div></div>
+      <div class="pct">21.71%</div><div class="amt">89,302</div></div>
+    <div class="row" style="grid-template-columns:238pt 1fr 84pt 92pt"><div class="cat">Collateral</div>
+      <div class="track"><div class="fill" style="width:53.09%"></div></div>
+      <div class="pct">17.45%</div><div class="amt">71,778</div></div>
+    <div class="row" style="grid-template-columns:238pt 1fr 84pt 92pt"><div class="cat">Other</div>
+      <div class="track"><div class="fill" style="width:36.35%"></div></div>
+      <div class="pct">11.95%</div><div class="amt">49,153</div></div>
+    <div class="row" style="grid-template-columns:238pt 1fr 84pt 92pt"><div class="cat">Credit application incomplete</div>
+      <div class="track"><div class="fill" style="width:18.24%"></div></div>
+      <div class="pct">6.00%</div><div class="amt">24,663</div></div>
+  </div>
+  <div class="note"><b>The unit is a citation, not an application.</b> HMDA lets a lender give
+  up to four reasons, so 320,762 denied applications carry <b>411,362 citations</b>. Five more
+  reasons share the remaining 10.02 percent. Debt-to-income is cited more often than
+  collateral and "other" combined.</div>
+</section>
+
+<!-- 8 ───────────────────────────────────────────────── recommendations -->
+<section class="slide">
+  <div class="kicker">What the data recommends</div>
+  <h2>Three findings a borrower<br>can act on</h2>
+  <div class="recs">
+    <div class="rec"><div class="num">1</div><div>
+      <h3>Lower is not better, and the reason matters</h3>
+      <p>Under 20 percent debt-to-income denies at <b class="red">24.49 percent</b>, worse than
+      every band from 20 to 49, where the rate is flat near <b>13</b>. That bottom is not
+      cautious borrowers: it is small second-lien business. The threshold is a line, not a
+      direction. Get under 50. Below 20 buys nothing.</p></div></div>
+    <div class="rec"><div class="num">2</div><div>
+      <h3>Which lender you ask is worth 15 times</h3>
+      <p>Same product in every row, conventional first-lien home purchase, 72 lenders with
+      2,000 or more such applications. Denial runs <b>1.14 to 31.57 percent</b>. SEFCU denies
+      <b>1.14</b> on <b>more leveraged, lower-income</b> applicants than Bank of America, which
+      denies <b class="red">17.76</b>. Most borrowers approach one lender.</p></div></div>
+    <div class="rec"><div class="num">3</div><div>
+      <h3>Borrowing against a home you own is a different market</h3>
+      <p>Home improvement denies at <b class="red">35.13 percent</b> and other purpose at
+      <b class="red">35.84</b>, against <b>10.78</b> for a purchase. With <b>493 and 479</b>
+      lenders active rather than 934. Three times as hard, with half the choice.</p></div></div>
+  </div>
+</section>
+
+<!-- 9 ───────────────────────────────────────────────── caveats -->
+<section class="slide">
+  <div class="kicker">What this cannot say</div>
+  <h2>The limits, stated<br>rather than buried</h2>
+  <p class="sub">HMDA records what lenders decided and the reason they wrote down. It holds
+  no credit score, no assets and no employment record. So every figure in this carousel is a
+  difference in <b style="color:var(--ink)">outcomes</b>, and nothing here isolates the
+  decision that produced it. Three conventions decide most of the numbers.</p>
+  <div class="bullets">
+    <div class="bullet g"><h4>Purchased loans are excluded everywhere</h4>
+      <p>Action code 6 records a loan a bank bought after another institution made it. The
+      buyer made no decision, so the row belongs in neither the numerator nor the denominator
+      of a rate. 158,743 rows excluded, leaving 1,596,676.</p></div>
+    <div class="bullet"><h4>An application ends in one of four ways, and the four sum to 100</h4>
+      <p>Approval, denial, file closed for incompleteness, withdrawal. Reporting all four is
+      what makes several findings visible at all: a lender can reach a low denial rate by
+      deciding well or by losing applications before a decision.</p></div>
+    <div class="bullet r"><h4>Categories the regulator defines are never dropped</h4>
+      <p>Including the codes for "not available" and "not provided". They are not groups of
+      people, and removing them would change every share in every table without saying so.</p></div>
+  </div>
+</section>
+
+<!-- 10 ──────────────────────────────────────────────── run it -->
+<section class="slide close">
+  <div class="kicker">Don't take my word for it</div>
+  <h2>Run the queries yourself</h2>
+  <div class="heroes" style="margin-top:26pt">
+    <div class="hero"><div class="n">42</div><div class="l">queries, each one printed beside its result</div></div>
+    <div class="hero"><div class="n">2</div><div class="l">engines, agreeing cell by cell</div></div>
+    <div class="hero"><div class="n">0</div><div class="l">installs, accounts or servers</div></div>
+  </div>
+  <p class="sub" style="margin-top:26pt">1.75 million rows of Parquet, queried in your own
+  browser tab by DuckDB compiled to WebAssembly. Nothing is installed, no account exists and
+  no data leaves your machine. Every figure in this carousel is one click from the query that
+  produced it, and an automated parity test runs all forty-two against PostgreSQL 18 and
+  DuckDB and fails on any difference. <b style="color:var(--ink)">Forty-two of forty-two
+  agree.</b></p>
+  <div class="links">
+    <a class="link" href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/"><span>→</span> The playground</a>
+    <a class="link" href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/catalog/"><span>→</span> The data dictionary</a>
+    <a class="link" href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/erd/"><span>→</span> The ERD</a>
+    <a class="link" href="https://github.com/SamuelBabajide/us-home-mortgage-disclosure-act-new-york"><span>→</span> The repository</a>
+  </div>
+  <a class="url" href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/">samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york</a>
+  <div class="stack"><b>Built with</b> &nbsp; PostgreSQL 18 · dimensional modelling · data
+  quality assertions · query optimisation · Python · DuckDB WASM · Parquet · GitHub Pages</div>
+  <div class="foot"><span><b>Samuel Babajide</b> — Data Scientist specialising in applied
+  analytics and predictive modelling within complex, regulated environments.</span>
+    <span><a href="https://samuelbabajide.github.io/">Website</a> · <a href="https://www.linkedin.com/in/samuelbbabajide">LinkedIn</a></span></div>
+</section>
