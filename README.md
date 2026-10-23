@@ -93,10 +93,6 @@ it is covering the same population.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A1">Query A1</a></summary>
 
 ```sql
--- A1. Overall market KPIs: volume, money and how applications end.
--- Denominator: every application filed, purchased loans excluded. A purchased
--- loan is one another lender already made and sold on, so nobody applied for it
--- here. The four rates are shares of that one denominator and sum to 100.
 WITH a AS (SELECT * FROM marts.fct_application WHERE action_taken <> '6')
 SELECT count(*)                                                        AS total_applications,
        count(*) FILTER (WHERE action_taken = '1')                      AS total_originated_loans,
@@ -144,28 +140,23 @@ never sees it.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A2">Query A2</a></summary>
 
 ```sql
--- A2. Overall market KPIs: the typical loan that was actually made.
--- Originated loans only. Interest rate and loan-to-value are present on 96
--- percent of originations but only 60 and 78 percent of all applications,
--- because a rate and a valuation are set when a loan completes.
--- Columns run applicant, then asset, then loan, then leverage, then price.
 SELECT count(*)                                                        AS originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN income_thousands > 0
                             THEN income_thousands * 1000 END)
-             AS DECIMAL(24,8)))                                              AS median_applicant_income,
+             AS DECIMAL(24,8)))                                        AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY property_value)
-             AS DECIMAL(24,8)))                                              AS median_property_value,
+             AS DECIMAL(24,8)))                                        AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY loan_amount)
-             AS DECIMAL(24,8)))                                              AS median_loan_amount,
+             AS DECIMAL(24,8)))                                        AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY loan_to_value_ratio)
-             AS DECIMAL(24,8)), 2)                                           AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                     AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN income_thousands > 0
                             THEN loan_amount / (income_thousands * 1000) END)
-             AS DECIMAL(24,8)), 2)                                           AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                     AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY interest_rate)
-             AS DECIMAL(24,8)), 3)                                           AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                     AS median_interest_rate
 FROM marts.fct_application
 WHERE action_taken = '1';
 ```
@@ -214,12 +205,6 @@ that pooling is unpacked, and no rate on this page is read without it.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A3">Query A3</a></summary>
 
 ```sql
--- A3. Dataset coverage: how much of what this register contains.
--- One pass produces the counts; a LATERAL VALUES join unpivots that single row
--- into a metric and value list, which reads better than one row of eight
--- columns. Tracts exclude the UNKNOWN placeholder used where none was filed.
--- Counties are restricted to codes beginning 36, which is New York: the register
--- also carries an UNKNOWN code and three out-of-state codes totalling four rows.
 WITH f AS (
   SELECT count(DISTINCT activity_year)                                 AS years_covered,
          count(DISTINCT lei)                                           AS lenders,
@@ -284,23 +269,6 @@ Four loan types and six loan purposes are the regulator's full sets, and
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A4">Query A4</a></summary>
 
 ```sql
--- Market profile by loan type.
--- What the register contains, cut by the four loan types HMDA defines. One row
--- per type, covering every application and the loans that completed.
--- Two share columns, not one, and the pair is the point. Share of applications
--- is what the market asked for; share of originated loans is what it made. They
--- differ by however much the categories differ in how often they complete, so
--- reading them side by side gives the origination rate without a column for it.
--- On loan type the two shares sit within 0.33 of a point of each other on every
--- row, which is itself the finding: the four types complete at close to the same
--- rate, between 57.06 and 70.26 percent.
--- Median loan amount and total loan amount are on originated loans only, for
--- the coverage reason in A2: an application that was never made has no agreed
--- amount to take a median of.
--- The median uses percentile_disc, which returns an amount actually lent rather
--- than a midpoint between two, and is exact in both engines.
--- Labels come from ref.ref_code rather than being written into the query, so a
--- change to the regulator's wording arrives in one place.
 SELECT r.label                                                              AS loan_type,
        count(*)                                                            AS total_applications,
        round(CAST(100.0 * count(*) AS DECIMAL(24,8))
@@ -311,7 +279,7 @@ SELECT r.label                                                              AS l
                                                                            AS pct_of_originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.loan_amount END)
-             AS DECIMAL(24,8)))                                                  AS median_loan_amount,
+             AS DECIMAL(24,8)))                                             AS median_loan_amount,
        COALESCE(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0)  AS total_loan_amount
 FROM marts.fct_application f
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
@@ -356,20 +324,6 @@ four.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A5">Query A5</a></summary>
 
 ```sql
--- Market profile by loan purpose.
--- The same shape as A4, cut by the six purposes HMDA defines.
--- Here the two share columns come apart, and that gap is the most useful thing
--- in the table. Home purchase is 45.92 percent of applications and 53.31 percent
--- of originated loans; home improvement is 15.51 and 12.90; other purpose is
--- 12.25 and 9.35. The categories do not complete at the same rate, so the market
--- that gets made is a different shape from the market that gets asked for.
--- Reading the two columns together gives that difference without a seventh
--- column: where share of originations exceeds share of applications, the purpose
--- completes above the market average, and where it falls short it completes
--- below.
--- Median loan amount and total loan amount are on originated loans only, for
--- the coverage reason in A2.
--- Labels come from ref.ref_code rather than being written into the query.
 SELECT r.label                                                              AS loan_purpose,
        count(*)                                                            AS total_applications,
        round(CAST(100.0 * count(*) AS DECIMAL(24,8))
@@ -380,7 +334,7 @@ SELECT r.label                                                              AS l
                                                                            AS pct_of_originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.loan_amount END)
-             AS DECIMAL(24,8)))                                                  AS median_loan_amount,
+             AS DECIMAL(24,8)))                                             AS median_loan_amount,
        COALESCE(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0)  AS total_loan_amount
 FROM marts.fct_application f
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
@@ -435,18 +389,6 @@ in mind before reading any table that mixes purposes together.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A6">Query A6</a></summary>
 
 ```sql
--- A6. The ten most expensive census tracts, by the price of the property bought.
--- Property value rather than loan amount: a large loan in a cheap area and a
--- small loan in an expensive one are indistinguishable on loan size alone.
--- Originated loans only, since a valuation exists on a loan that completed.
--- A tract code carries its county in the first five digits, which is how the
--- county name is joined without going through the fact table's own county code.
--- The register stores a county FIPS code and never a county name, so the 62 New
--- York names are supplied inline rather than joined from a reference table.
--- That is deliberate: it is a fixed, published list that cannot drift, it keeps
--- the query runnable anywhere the fact table is, and it puts the mapping in
--- front of the reader instead of behind a join. All 62 codes match, which is
--- also the check that the restriction to codes beginning 36 is complete.
 WITH county (county_code, county_name) AS (
     VALUES ('36001', 'Albany County'),
            ('36003', 'Allegany County'),
@@ -515,11 +457,11 @@ SELECT f.census_tract,
        c.county_name,
        count(*)                                                      AS originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.property_value)
-             AS DECIMAL(24,8)))                                            AS median_property_value,
+             AS DECIMAL(24,8)))                                      AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_amount)
-             AS DECIMAL(24,8)))                                            AS median_loan_amount,
+             AS DECIMAL(24,8)))                                      AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.income_thousands * 1000)
-             AS DECIMAL(24,8)))                                            AS median_applicant_income
+             AS DECIMAL(24,8)))                                      AS median_applicant_income
 FROM marts.fct_application f
 LEFT JOIN county c ON c.county_code = left(f.census_tract, 5)
 WHERE f.action_taken = '1'
@@ -565,17 +507,6 @@ times the state median of 475,000.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=A7">Query A7</a></summary>
 
 ```sql
--- A7. The ten most expensive counties, by the price of the property bought.
--- The same measure as A6, one level up. A county needs 500 originated loans to
--- appear, so the ranking is not decided by a handful of large sales in a small
--- county. The register also carries an UNKNOWN county code and three
--- out-of-state codes totalling four rows, which fall out of the join.
--- The register stores a county FIPS code and never a county name, so the 62 New
--- York names are supplied inline rather than joined from a reference table.
--- That is deliberate: it is a fixed, published list that cannot drift, it keeps
--- the query runnable anywhere the fact table is, and it puts the mapping in
--- front of the reader instead of behind a join. All 62 codes match, which is
--- also the check that the restriction to codes beginning 36 is complete.
 WITH county (county_code, county_name) AS (
     VALUES ('36001', 'Albany County'),
            ('36003', 'Allegany County'),
@@ -644,11 +575,11 @@ SELECT c.county_name,
        f.county_code,
        count(*)                                                      AS originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.property_value)
-             AS DECIMAL(24,8)))                                            AS median_property_value,
+             AS DECIMAL(24,8)))                                      AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_amount)
-             AS DECIMAL(24,8)))                                            AS median_loan_amount,
+             AS DECIMAL(24,8)))                                      AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.income_thousands * 1000)
-             AS DECIMAL(24,8)))                                            AS median_applicant_income
+             AS DECIMAL(24,8)))                                      AS median_applicant_income
 FROM marts.fct_application f
 JOIN county c ON c.county_code = f.county_code
 WHERE f.action_taken = '1' AND f.property_value IS NOT NULL
@@ -702,10 +633,6 @@ and the yearly series cannot disagree.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=B1">Query B1</a></summary>
 
 ```sql
--- B1. Market trend: volume, money and how applications end, by filing year.
--- The same measures and the same denominator as A1, split by activity_year.
--- Purchased loans are excluded, so the four rates share one denominator per
--- year and each year's four rates sum to 100.
 SELECT activity_year,
        count(*)                                                        AS total_applications,
        count(*) FILTER (WHERE action_taken = '1')                      AS total_originated_loans,
@@ -753,28 +680,24 @@ incompleteness drift easier to see rather than harder.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=B2">Query B2</a></summary>
 
 ```sql
--- B2. Market trend: the typical loan that was made, by filing year.
--- Originated loans only, for the coverage reason set out in A2. Columns run in
--- the same order as A2: applicant, asset, loan, leverage, price, so the two
--- tables can be read against each other without rereading the header.
 SELECT activity_year,
        count(*)                                                        AS originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN income_thousands > 0
                             THEN income_thousands * 1000 END)
-             AS DECIMAL(24,8)))                                              AS median_applicant_income,
+             AS DECIMAL(24,8)))                                        AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY property_value)
-             AS DECIMAL(24,8)))                                              AS median_property_value,
+             AS DECIMAL(24,8)))                                        AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY loan_amount)
-             AS DECIMAL(24,8)))                                              AS median_loan_amount,
+             AS DECIMAL(24,8)))                                        AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY loan_to_value_ratio)
-             AS DECIMAL(24,8)), 2)                                           AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                     AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN income_thousands > 0
                             THEN loan_amount / (income_thousands * 1000) END)
-             AS DECIMAL(24,8)), 2)                                           AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                     AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY interest_rate)
-             AS DECIMAL(24,8)), 3)                                           AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                     AS median_interest_rate
 FROM marts.fct_application
 WHERE action_taken = '1'
 GROUP BY 1
@@ -847,16 +770,6 @@ behind six medians.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C1a">Query C1a</a></summary>
 
 ```sql
--- C1a. Applications and outcomes by applicant race.
--- Volume and outcomes. The companion query C1b carries the medians for the
--- same groups, split out because one table of fifteen columns cannot be read
--- without scrolling and a table nobody can see is a table nobody checks.
--- The population changes once, after the four rates:
---   Columns 2 to 6, every application the group filed, purchased loans
---   excluded, on the denominators defined in A1. The four rates sum to 100
---   across each row.
---   Columns 7 to 9, the loans that completed. Share is the group's share of all
---   originated loans in the market, so it sums down the column, not across.
 SELECT a.derived_race                                                            AS applicant_race,
        count(*)                                                             AS total_applications,
        round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2','8')) AS DECIMAL(24,8))
@@ -912,38 +825,24 @@ rather than comparison.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C1b">Query C1b</a></summary>
 
 ```sql
--- C1b. Loan characteristics by applicant race.
--- The characteristics of the loans that completed. Companion to C1a, which
--- carries the volume and outcome rates for the same groups.
--- Originated loans only, for the coverage reason set out in A2, and the count
--- is repeated as column 2 so every median has its denominator in view.
--- Columns run applicant, asset, loan, leverage, price, the order used in A2,
--- B2 and throughout.
--- Loan-to-value is the ratio as filed, which counts every lien on the property
--- rather than only the loan in the row. Section B sets out the test for this.
--- Loan-to-income is computed here; rows with zero or negative reported income
--- are excluded from that column alone.
--- The rate is pooled across four years in which the market median moved 237.5
--- basis points, so it partly reflects when a group borrowed. The orderings
--- below were checked within 2025 alone and hold.
 SELECT a.derived_race                                                            AS applicant_race,
        count(*)                                                             AS originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.income_thousands > 0
                             THEN f.income_thousands * 1000 END)
-             AS DECIMAL(24,8)))                                                   AS median_applicant_income,
+             AS DECIMAL(24,8)))                                                  AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.property_value)
-             AS DECIMAL(24,8)))                                                   AS median_property_value,
+             AS DECIMAL(24,8)))                                                  AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_amount)
-             AS DECIMAL(24,8)))                                                   AS median_loan_amount,
+             AS DECIMAL(24,8)))                                                  AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_to_value_ratio)
-             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                               AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.income_thousands > 0
                             THEN f.loan_amount / (f.income_thousands * 1000) END)
-             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                               AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.interest_rate)
-             AS DECIMAL(24,8)), 3)                                                AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                               AS median_interest_rate
 FROM marts.fct_application f
 JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
 WHERE f.action_taken = '1'
@@ -994,16 +893,6 @@ behind six medians.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C2a">Query C2a</a></summary>
 
 ```sql
--- C2a. Applications and outcomes by applicant sex.
--- Volume and outcomes. The companion query C2b carries the medians for the
--- same groups, split out because one table of fifteen columns cannot be read
--- without scrolling and a table nobody can see is a table nobody checks.
--- The population changes once, after the four rates:
---   Columns 2 to 6, every application the group filed, purchased loans
---   excluded, on the denominators defined in A1. The four rates sum to 100
---   across each row.
---   Columns 7 to 9, the loans that completed. Share is the group's share of all
---   originated loans in the market, so it sums down the column, not across.
 SELECT a.derived_sex                                                            AS applicant_sex,
        count(*)                                                             AS total_applications,
        round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2','8')) AS DECIMAL(24,8))
@@ -1053,38 +942,24 @@ category of person.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C2b">Query C2b</a></summary>
 
 ```sql
--- C2b. Loan characteristics by applicant sex.
--- The characteristics of the loans that completed. Companion to C2a, which
--- carries the volume and outcome rates for the same groups.
--- Originated loans only, for the coverage reason set out in A2, and the count
--- is repeated as column 2 so every median has its denominator in view.
--- Columns run applicant, asset, loan, leverage, price, the order used in A2,
--- B2 and throughout.
--- Loan-to-value is the ratio as filed, which counts every lien on the property
--- rather than only the loan in the row. Section B sets out the test for this.
--- Loan-to-income is computed here; rows with zero or negative reported income
--- are excluded from that column alone.
--- The rate is pooled across four years in which the market median moved 237.5
--- basis points, so it partly reflects when a group borrowed. The orderings
--- below were checked within 2025 alone and hold.
 SELECT a.derived_sex                                                            AS applicant_sex,
        count(*)                                                             AS originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.income_thousands > 0
                             THEN f.income_thousands * 1000 END)
-             AS DECIMAL(24,8)))                                                   AS median_applicant_income,
+             AS DECIMAL(24,8)))                                                 AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.property_value)
-             AS DECIMAL(24,8)))                                                   AS median_property_value,
+             AS DECIMAL(24,8)))                                                 AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_amount)
-             AS DECIMAL(24,8)))                                                   AS median_loan_amount,
+             AS DECIMAL(24,8)))                                                 AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.loan_to_value_ratio)
-             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                              AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.income_thousands > 0
                             THEN f.loan_amount / (f.income_thousands * 1000) END)
-             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                              AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY f.interest_rate)
-             AS DECIMAL(24,8)), 3)                                                AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                              AS median_interest_rate
 FROM marts.fct_application f
 JOIN marts.dim_applicant_profile a ON a.applicant_profile_sk = f.applicant_profile_sk
 WHERE f.action_taken = '1'
@@ -1131,16 +1006,6 @@ behind six medians.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C3a">Query C3a</a></summary>
 
 ```sql
--- C3a. Applications and outcomes by applicant age band.
--- Volume and outcomes. The companion query C3b carries the medians for the
--- same groups, split out because one table of fifteen columns cannot be read
--- without scrolling and a table nobody can see is a table nobody checks.
--- The population changes once, after the four rates:
---   Columns 2 to 6, every application the group filed, purchased loans
---   excluded, on the denominators defined in A1. The four rates sum to 100
---   across each row.
---   Columns 7 to 9, the loans that completed. Share is the group's share of all
---   originated loans in the market, so it sums down the column, not across.
 SELECT a.applicant_age                                                            AS applicant_age,
        count(*)                                                             AS total_applications,
        round(CAST(100.0*count(*) FILTER (WHERE f.action_taken IN ('1','2','8')) AS DECIMAL(24,8))
@@ -1191,20 +1056,6 @@ highest approval rate in the table at 66.87 and the highest withdrawal rate at
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=C3b">Query C3b</a></summary>
 
 ```sql
--- C3b. Loan characteristics by applicant age band.
--- The characteristics of the loans that completed. Companion to C3a, which
--- carries the volume and outcome rates for the same groups.
--- Originated loans only, for the coverage reason set out in A2, and the count
--- is repeated as column 2 so every median has its denominator in view.
--- Columns run applicant, asset, loan, leverage, price, the order used in A2,
--- B2 and throughout.
--- Loan-to-value is the ratio as filed, which counts every lien on the property
--- rather than only the loan in the row. Section B sets out the test for this.
--- Loan-to-income is computed here; rows with zero or negative reported income
--- are excluded from that column alone.
--- The rate is pooled across four years in which the market median moved 237.5
--- basis points, so it partly reflects when a group borrowed. The orderings
--- below were checked within 2025 alone and hold.
 SELECT a.applicant_age                                                            AS applicant_age,
        count(*)                                                             AS originated_loans,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
@@ -1388,19 +1239,19 @@ SELECT l.income_band,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN a.income_thousands > 0
                             THEN a.income_thousands * 1000 END)
-             AS DECIMAL(24,8)))                                                   AS median_applicant_income,
+             AS DECIMAL(24,8)))                                             AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY a.property_value)
-             AS DECIMAL(24,8)))                                                   AS median_property_value,
+             AS DECIMAL(24,8)))                                             AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY a.loan_amount)
-             AS DECIMAL(24,8)))                                                   AS median_loan_amount,
+             AS DECIMAL(24,8)))                                             AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY a.loan_to_value_ratio)
-             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                          AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN a.income_thousands > 0
                             THEN a.loan_amount / (a.income_thousands * 1000) END)
-             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                          AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (ORDER BY a.interest_rate)
-             AS DECIMAL(24,8)), 3)                                                AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                          AS median_interest_rate
 FROM application a
 JOIN band_label l ON l.band_key = a.band_key
 WHERE a.action_taken = '1'
@@ -1729,18 +1580,6 @@ denial, and the bottom row prints that total.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D1">Query D1</a></summary>
 
 ```sql
--- Denial reason by applicant income band, as a rate.
--- Each cell is the number of times this reason was cited for this group per 100
--- applications the group filed, purchased loans excluded. Every column carries
--- its own denominator, so the size of a group cannot leak into the cell.
--- The denominator is the one A1 uses for the denial rate, which makes each
--- column total equal that group's denial rate times its reasons per denial.
--- The unit is a reason citation. HMDA allows up to four per denial, so the
--- 320,762 denied applications carry 411,362 citations. No application cites the
--- same reason twice, so a citation and an application citing it are one count.
--- ref.ref_code repeats the nine labels once per reason slot, so the join is
--- pinned to denial_reason_1 to avoid a fourfold fan-out. Code 1111 is the
--- partially exempt filer code and has no label there.
 WITH denominator AS (
     SELECT
            count(*) FILTER (WHERE CASE WHEN f.income_thousands IS NULL OR f.income_thousands <= 0 THEN 8
@@ -1911,18 +1750,6 @@ denial, and the bottom row prints that total.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D2">Query D2</a></summary>
 
 ```sql
--- Denial reason by loan type, as a rate.
--- Each cell is the number of times this reason was cited for this group per 100
--- applications the group filed, purchased loans excluded. Every column carries
--- its own denominator, so the size of a group cannot leak into the cell.
--- The denominator is the one A1 uses for the denial rate, which makes each
--- column total equal that group's denial rate times its reasons per denial.
--- The unit is a reason citation. HMDA allows up to four per denial, so the
--- 320,762 denied applications carry 411,362 citations. No application cites the
--- same reason twice, so a citation and an application citing it are one count.
--- ref.ref_code repeats the nine labels once per reason slot, so the join is
--- pinned to denial_reason_1 to avoid a fourfold fan-out. Code 1111 is the
--- partially exempt filer code and has no label there.
 WITH denominator AS (
     SELECT
            count(*) FILTER (WHERE p.loan_type = '1') AS apps_conventional,
@@ -2007,18 +1834,6 @@ denial, and the bottom row prints that total.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D3">Query D3</a></summary>
 
 ```sql
--- Denial reason by loan purpose, as a rate.
--- Each cell is the number of times this reason was cited for this group per 100
--- applications the group filed, purchased loans excluded. Every column carries
--- its own denominator, so the size of a group cannot leak into the cell.
--- The denominator is the one A1 uses for the denial rate, which makes each
--- column total equal that group's denial rate times its reasons per denial.
--- The unit is a reason citation. HMDA allows up to four per denial, so the
--- 320,762 denied applications carry 411,362 citations. No application cites the
--- same reason twice, so a citation and an application citing it are one count.
--- ref.ref_code repeats the nine labels once per reason slot, so the join is
--- pinned to denial_reason_1 to avoid a fourfold fan-out. Code 1111 is the
--- partially exempt filer code and has no label there.
 WITH denominator AS (
     SELECT
            count(*) FILTER (WHERE p.loan_purpose = '1')  AS apps_home_purchase,
@@ -2112,18 +1927,6 @@ denial, and the bottom row prints that total.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D4">Query D4</a></summary>
 
 ```sql
--- Denial reason by applicant race, as a rate.
--- Each cell is the number of times this reason was cited for this group per 100
--- applications the group filed, purchased loans excluded. Every column carries
--- its own denominator, so the size of a group cannot leak into the cell.
--- The denominator is the one A1 uses for the denial rate, which makes each
--- column total equal that group's denial rate times its reasons per denial.
--- The unit is a reason citation. HMDA allows up to four per denial, so the
--- 320,762 denied applications carry 411,362 citations. No application cites the
--- same reason twice, so a citation and an application citing it are one count.
--- ref.ref_code repeats the nine labels once per reason slot, so the join is
--- pinned to denial_reason_1 to avoid a fourfold fan-out. Code 1111 is the
--- partially exempt filer code and has no label there.
 WITH denominator AS (
     SELECT
            count(*) FILTER (WHERE a.derived_race = 'White')                                     AS apps_white,
@@ -2228,18 +2031,6 @@ denial, and the bottom row prints that total.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D5">Query D5</a></summary>
 
 ```sql
--- Denial reason by applicant sex, as a rate.
--- Each cell is the number of times this reason was cited for this group per 100
--- applications the group filed, purchased loans excluded. Every column carries
--- its own denominator, so the size of a group cannot leak into the cell.
--- The denominator is the one A1 uses for the denial rate, which makes each
--- column total equal that group's denial rate times its reasons per denial.
--- The unit is a reason citation. HMDA allows up to four per denial, so the
--- 320,762 denied applications carry 411,362 citations. No application cites the
--- same reason twice, so a citation and an application citing it are one count.
--- ref.ref_code repeats the nine labels once per reason slot, so the join is
--- pinned to denial_reason_1 to avoid a fourfold fan-out. Code 1111 is the
--- partially exempt filer code and has no label there.
 WITH denominator AS (
     SELECT
            count(*) FILTER (WHERE a.derived_sex = 'Male')              AS apps_male,
@@ -2327,18 +2118,6 @@ denial, and the bottom row prints that total.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=D6">Query D6</a></summary>
 
 ```sql
--- Denial reason by applicant age band, as a rate.
--- Each cell is the number of times this reason was cited for this group per 100
--- applications the group filed, purchased loans excluded. Every column carries
--- its own denominator, so the size of a group cannot leak into the cell.
--- The denominator is the one A1 uses for the denial rate, which makes each
--- column total equal that group's denial rate times its reasons per denial.
--- The unit is a reason citation. HMDA allows up to four per denial, so the
--- 320,762 denied applications carry 411,362 citations. No application cites the
--- same reason twice, so a citation and an application citing it are one count.
--- ref.ref_code repeats the nine labels once per reason slot, so the join is
--- pinned to denial_reason_1 to avoid a fourfold fan-out. Code 1111 is the
--- partially exempt filer code and has no label there.
 WITH denominator AS (
     SELECT
            count(*) FILTER (WHERE a.applicant_age = '<25')   AS apps_under_25,
@@ -2473,46 +2252,7 @@ six rows printed here.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E1a">Query E1a</a></summary>
 
 ```sql
--- Lender performance, outcomes.
--- One row per lender over the four years, purchased loans excluded, on the same
--- denominators A1 uses: the four rates cover every application the lender took
--- and sum to 100 across the row.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not. The only
--- filter is on the applications, which are all in New York.
--- Total applications is column 2 so that any row's rates are read beside the
--- count they rest on. Re-sorting by a rate puts the smallest lenders on top.
--- Columns 5 and 6 are the lender's market share on two bases: its originated
--- loans over all 951,371 in the register, and its dollars over all
--- 371,417,740,000. They are different questions and different numbers, because
--- a lender whose loans run bigger than the market's holds more of the money
--- than of the loans. Both denominators come from a window over the grouped
--- result, so each column sums to 100 down all 1,139 rows.
--- This is the only table in Section E that carries market share. E2 to E10 show
--- each lender's own product mix instead, and a lender's share of any single
--- category is (its share there x column 5) divided by that category's own share
--- of the market.
--- Four decimal places here, not two: the largest market share in the table is
--- 5.2483 percent and 977 lenders are below 0.1, so two places would collapse
--- most of the column to 0.00.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -2612,37 +2352,7 @@ six rows printed here.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E1b">Query E1b</a></summary>
 
 ```sql
--- Lender performance, loan characteristics.
--- Originated loans only, for the coverage reason in A2: a denied application
--- has no interest rate and often no property value, so a median taken over
--- every application would be a median of whatever happened to be filled in.
--- Total applications is kept beside originated loans so the funnel behind the
--- medians stays visible, and so a median is always read beside its count.
--- Medians use percentile_disc, which returns a figure a borrower actually paid
--- rather than a midpoint between two of them, and is exact in both engines.
--- The column order is the one used in A2, B2, C1b and C4b.
--- Both income columns exclude rows reporting zero or negative income.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not. The only
--- filter is on the applications, which are all in New York.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -2675,23 +2385,23 @@ SELECT l.lender_name,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' AND f.income_thousands > 0
                             THEN f.income_thousands * 1000 END)
-             AS DECIMAL(24,8)))                                                AS median_applicant_income,
+             AS DECIMAL(24,8)))                                          AS median_applicant_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.property_value END)
-             AS DECIMAL(24,8)))                                                AS median_property_value,
+             AS DECIMAL(24,8)))                                          AS median_property_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.loan_amount END)
-             AS DECIMAL(24,8)))                                                AS median_loan_amount,
+             AS DECIMAL(24,8)))                                          AS median_loan_amount,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.loan_to_value_ratio END)
-             AS DECIMAL(24,8)), 2)                                             AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                       AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' AND f.income_thousands > 0
                             THEN f.loan_amount / (f.income_thousands * 1000) END)
-             AS DECIMAL(24,8)), 2)                                             AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                       AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS DECIMAL(24,8)), 3)                                             AS median_interest_rate
+             AS DECIMAL(24,8)), 3)                                       AS median_interest_rate
 FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
@@ -2742,50 +2452,7 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E2">Query E2</a></summary>
 
 ```sql
--- Lender share of originations by loan type.
--- One row per lender. Columns 2 to 4 are the lender's own book. After them each
--- loan type gets a pair: the lender's loans in it as a share of that lender's own
--- originated loans, and the dollars behind them as an amount.
--- The denominator is the lender's OWN originated loans, column 3, not the
--- market's. So a row describes that lender's product mix and the share columns
--- sum to 100 across each row rather than down the column. The amount columns
--- sum to column 4 on every row, exactly, because they are sums rather than
--- quotients.
--- The count behind any share is recoverable as share / 100 x column 3, so
--- nothing is lost by showing a proportion. The dollars are not recoverable from
--- anything, which is why those stay absolute.
--- Market share is deliberately absent here: it lives in E1a, on both a loan
--- count and a loan amount basis. A lender's share of any single loan type is
--- (this share x E1a's loan-count market share) divided by that loan type's own
--- share of the market, which Sections A, C and D publish.
--- Two decimal places. The smallest non-zero cell a large lender can have is one
--- loan in twelve thousand, which prints as 0.01; only a lender above twenty
--- thousand originations can round a single loan away, and there are ten.
--- A lender with no originated loans at all, and there are 220, returns null on
--- every share rather than zero: it has no mix. Its amounts are 0, because zero
--- dollars is a fact while an undefined proportion is not.
--- A lender with nothing in one loan type gets a 0.00 share and 0 dollars.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not. The only
--- filter is on the applications, which are all in New York.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -2886,50 +2553,7 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E3">Query E3</a></summary>
 
 ```sql
--- Lender share of originations by loan purpose.
--- One row per lender. Columns 2 to 4 are the lender's own book. After them each
--- purpose gets a pair: the lender's loans in it as a share of that lender's own
--- originated loans, and the dollars behind them as an amount.
--- The denominator is the lender's OWN originated loans, column 3, not the
--- market's. So a row describes that lender's product mix and the share columns
--- sum to 100 across each row rather than down the column. The amount columns
--- sum to column 4 on every row, exactly, because they are sums rather than
--- quotients.
--- The count behind any share is recoverable as share / 100 x column 3, so
--- nothing is lost by showing a proportion. The dollars are not recoverable from
--- anything, which is why those stay absolute.
--- Market share is deliberately absent here: it lives in E1a, on both a loan
--- count and a loan amount basis. A lender's share of any single purpose is
--- (this share x E1a's loan-count market share) divided by that purpose's own
--- share of the market, which Sections A, C and D publish.
--- Two decimal places. The smallest non-zero cell a large lender can have is one
--- loan in twelve thousand, which prints as 0.01; only a lender above twenty
--- thousand originations can round a single loan away, and there are ten.
--- A lender with no originated loans at all, and there are 220, returns null on
--- every share rather than zero: it has no mix. Its amounts are 0, because zero
--- dollars is a fact while an undefined proportion is not.
--- A lender with nothing in one purpose gets a 0.00 share and 0 dollars.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not. The only
--- filter is on the applications, which are all in New York.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -3033,60 +2657,7 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E4">Query E4</a></summary>
 
 ```sql
--- Lender share of originations by loan amount band.
--- One row per lender. Columns 2 to 4 are the lender's own book. After them each
--- band gets a pair: the lender's loans in it as a share of that lender's own
--- originated loans, and the dollars behind them as an amount.
--- The denominator is the lender's OWN originated loans, column 3, not the
--- market's. So a row describes that lender's product mix and the share columns
--- sum to 100 across each row rather than down the column. The amount columns
--- sum to column 4 on every row, exactly, because they are sums rather than
--- quotients.
--- The count behind any share is recoverable as share / 100 x column 3, so
--- nothing is lost by showing a proportion. The dollars are not recoverable from
--- anything, which is why those stay absolute.
--- Market share is deliberately absent here: it lives in E1a, on both a loan
--- count and a loan amount basis. A lender's share of any single band is
--- (this share x E1a's loan-count market share) divided by that band's own
--- share of the market, which Sections A, C and D publish.
--- Two decimal places. The smallest non-zero cell a large lender can have is one
--- loan in twelve thousand, which prints as 0.01; only a lender above twenty
--- thousand originations can round a single loan away, and there are ten.
--- A lender with no originated loans at all, and there are 220, returns null on
--- every share rather than zero: it has no mix. Its amounts are 0, because zero
--- dollars is a fact while an undefined proportion is not.
--- A lender with nothing in one band gets a 0.00 share and 0 dollars.
--- The six bands are round numbers placed on the actual distribution of
--- originated loans, whose quartiles are 115,000 and 485,000 dollars and whose
--- median is 245,000. Across the market they hold 19.23, 32.04, 25.01, 13.29,
--- 4.30 and 5.88 percent of originated loans.
--- The last column is a share with no amount beside it. 2,115 originated loans
--- across 144 lenders carry no loan amount at all, 227 of them at JPMorgan, so
--- without it the six size bands would quietly cover 99.78 percent of a
--- lender's originated loans rather than all of them. It has no amount column
--- because a loan with no amount contributes nothing to the dollars by
--- definition, so that column would read 0 on every row.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not. The only
--- filter is on the applications, which are all in New York.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -3187,54 +2758,7 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E5">Query E5</a></summary>
 
 ```sql
--- Lender share of originations by applicant income band.
--- One row per lender. Columns 2 to 4 are the lender's own book. After them each
--- band gets a pair: the lender's loans in it as a share of that lender's own
--- originated loans, and the dollars behind them as an amount.
--- The denominator is the lender's OWN originated loans, column 3, not the
--- market's. So a row describes that lender's product mix and the share columns
--- sum to 100 across each row rather than down the column. The amount columns
--- sum to column 4 on every row, exactly, because they are sums rather than
--- quotients.
--- The count behind any share is recoverable as share / 100 x column 3, so
--- nothing is lost by showing a proportion. The dollars are not recoverable from
--- anything, which is why those stay absolute.
--- Market share is deliberately absent here: it lives in E1a, on both a loan
--- count and a loan amount basis. A lender's share of any single band is
--- (this share x E1a's loan-count market share) divided by that band's own
--- share of the market, which Sections A, C and D publish.
--- Two decimal places. The smallest non-zero cell a large lender can have is one
--- loan in twelve thousand, which prints as 0.01; only a lender above twenty
--- thousand originations can round a single loan away, and there are ten.
--- A lender with no originated loans at all, and there are 220, returns null on
--- every share rather than zero: it has no mix. Its amounts are 0, because zero
--- dollars is a fact while an undefined proportion is not.
--- A lender with nothing in one band gets a 0.00 share and 0 dollars.
--- The eight bands are the ones defined in C4a, so a lender's income profile
--- can be read against the market's. Income not reported is a band and not a
--- filter: a reported income of zero or less is a missing value, not an income,
--- and the two are treated alike.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not. The only
--- filter is on the applications, which are all in New York.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -3335,60 +2859,7 @@ six rows printed here.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E6">Query E6</a></summary>
 
 ```sql
--- Lender interest rate distribution.
--- One row per lender. Columns 5 to 9 are the interest rate at the tenth,
--- twenty-fifth, fiftieth, seventy-fifth and ninetieth percentile of the
--- lender's originated loans, which is the shape of its pricing rather than one
--- point from it.
--- percentile_disc, not percentile_cont: the continuous version interpolates
--- between two loans and returns a rate nobody paid, and the two engines land on
--- different sides of the third decimal. The discrete version returns a rate a
--- borrower actually paid and is exact in both. The median column reproduces
--- E1b's exactly.
--- The filter sits inside the ORDER BY as a CASE rather than in a WHERE clause,
--- so columns 2 to 4 still describe the lender's whole book.
--- Rates are pooled across four years in which the market median moved 237.5
--- basis points, so a percentile partly reflects when a lender was lending. It
--- also mixes first mortgages with second liens and open-end lines, which are
--- priced differently by design: see the mix table under E1b.
--- Column 4 is the denominator the five percentiles actually rest on, and it is
--- there because it is often not column 3. 34,269 originated loans, 3.6 percent,
--- carry no interest rate at all; three lenders with more than 1,000 originated
--- loans report no rate on any of them and return five blanks; and Pioneer Bank
--- reports 1,071 originated loans of which exactly one has a rate, so its five
--- percentiles are that one loan five times. Without column 4 that row looks
--- like a priced book of a thousand loans.
--- It counts the loans that HAVE a rate rather than the loans missing one,
--- because it is the denominator of the columns beside it, and every statistic
--- in this project is printed next to the count it rests on rather than next to
--- the count it does not. The missing figure is column 3 minus column 4.
--- 5,949 originated loans report a rate of exactly 0, mostly open-end lines in
--- subordinate position. They are counted as what they say they are: loans made
--- at a zero rate. A reported zero is a reported rate, not a missing value, and
--- the filer is the authority on what it filed. This is why EMPOWER FEDERAL
--- CREDIT UNION reads 0.000 at the tenth percentile, and the figure is correct.
--- Every median rate in the project treats them the same way, which is what
--- keeps the pooled market median at A2's published 6.281.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -3422,19 +2893,19 @@ SELECT l.lender_name,
        COALESCE(sum(f.loan_amount) FILTER (WHERE f.action_taken = '1'), 0) AS total_loan_amount,
        round(CAST(percentile_disc(0.10) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS DECIMAL(24,8)), 3)  AS p10_interest_rate,
+             AS DECIMAL(24,8)), 3)    AS p10_interest_rate,
        round(CAST(percentile_disc(0.25) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS DECIMAL(24,8)), 3)  AS p25_interest_rate,
+             AS DECIMAL(24,8)), 3)    AS p25_interest_rate,
        round(CAST(percentile_disc(0.50) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
              AS DECIMAL(24,8)), 3)AS median_interest_rate,
        round(CAST(percentile_disc(0.75) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS DECIMAL(24,8)), 3)  AS p75_interest_rate,
+             AS DECIMAL(24,8)), 3)    AS p75_interest_rate,
        round(CAST(percentile_disc(0.90) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken = '1' THEN f.interest_rate END)
-             AS DECIMAL(24,8)), 3)  AS p90_interest_rate
+             AS DECIMAL(24,8)), 3)    AS p90_interest_rate
 FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 WHERE f.action_taken <> '6'
@@ -3493,56 +2964,7 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E7">Query E7</a></summary>
 
 ```sql
--- Lender share of originations by loan term.
--- One row per lender. Columns 2 to 4 are the lender's own book. After them each
--- band gets a pair: the lender's loans in it as a share of that lender's own
--- originated loans, and the dollars behind them as an amount.
--- The denominator is the lender's OWN originated loans, column 3, not the
--- market's. So a row describes that lender's product mix and the share columns
--- sum to 100 across each row rather than down the column. The amount columns
--- sum to column 4 on every row, exactly, because they are sums rather than
--- quotients.
--- The count behind any share is recoverable as share / 100 x column 3, so
--- nothing is lost by showing a proportion. The dollars are not recoverable from
--- anything, which is why those stay absolute.
--- Market share is deliberately absent here: it lives in E1a, on both a loan
--- count and a loan amount basis. A lender's share of any single band is
--- (this share x E1a's loan-count market share) divided by that band's own
--- share of the market, which Sections A, C and D publish.
--- Two decimal places. The smallest non-zero cell a large lender can have is one
--- loan in twelve thousand, which prints as 0.01; only a lender above twenty
--- thousand originations can round a single loan away, and there are ten.
--- A lender with no originated loans at all, and there are 220, returns null on
--- every share rather than zero: it has no mix. Its amounts are 0, because zero
--- dollars is a fact while an undefined proportion is not.
--- A lender with nothing in one band gets a 0.00 share and 0 dollars.
--- The bands are cut at the standard terms rather than on quantiles, because
--- mortgage terms are not continuous: 647,904 of the 899,799 reported terms are
--- exactly 360 months and only 399 distinct values exist. Quantile cuts would
--- have put a boundary inside that spike. 51,572 originated loans, 5.42 percent
--- of the market, report no term, and that is a band rather than a filter
--- because those loans carry 25.6 billion dollars.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not. The only
--- filter is on the applications, which are all in New York.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -3649,54 +3071,7 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E8">Query E8</a></summary>
 
 ```sql
--- Lender share of originations by applicant age band.
--- One row per lender. Columns 2 to 4 are the lender's own book. After them each
--- band gets a pair: the lender's loans in it as a share of that lender's own
--- originated loans, and the dollars behind them as an amount.
--- The denominator is the lender's OWN originated loans, column 3, not the
--- market's. So a row describes that lender's product mix and the share columns
--- sum to 100 across each row rather than down the column. The amount columns
--- sum to column 4 on every row, exactly, because they are sums rather than
--- quotients.
--- The count behind any share is recoverable as share / 100 x column 3, so
--- nothing is lost by showing a proportion. The dollars are not recoverable from
--- anything, which is why those stay absolute.
--- Market share is deliberately absent here: it lives in E1a, on both a loan
--- count and a loan amount basis. A lender's share of any single band is
--- (this share x E1a's loan-count market share) divided by that band's own
--- share of the market, which Sections A, C and D publish.
--- Two decimal places. The smallest non-zero cell a large lender can have is one
--- loan in twelve thousand, which prints as 0.01; only a lender above twenty
--- thousand originations can round a single loan away, and there are ten.
--- A lender with no originated loans at all, and there are 220, returns null on
--- every share rather than zero: it has no mix. Its amounts are 0, because zero
--- dollars is a fact while an undefined proportion is not.
--- A lender with nothing in one band gets a 0.00 share and 0 dollars.
--- The eight bands are the ones the regulator defines, as used in C3a and D6,
--- including 8888 for an age that was not provided. Across the market that band
--- is 3.86 percent of originated loans and 12.31 percent of the dollars, so it
--- is kept.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not. The only
--- filter is on the applications, which are all in New York.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -3802,53 +3177,7 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E9">Query E9</a></summary>
 
 ```sql
--- Lender share of originations by applicant sex.
--- One row per lender. Columns 2 to 4 are the lender's own book. After them each
--- category gets a pair: the lender's loans in it as a share of that lender's own
--- originated loans, and the dollars behind them as an amount.
--- The denominator is the lender's OWN originated loans, column 3, not the
--- market's. So a row describes that lender's product mix and the share columns
--- sum to 100 across each row rather than down the column. The amount columns
--- sum to column 4 on every row, exactly, because they are sums rather than
--- quotients.
--- The count behind any share is recoverable as share / 100 x column 3, so
--- nothing is lost by showing a proportion. The dollars are not recoverable from
--- anything, which is why those stay absolute.
--- Market share is deliberately absent here: it lives in E1a, on both a loan
--- count and a loan amount basis. A lender's share of any single category is
--- (this share x E1a's loan-count market share) divided by that category's own
--- share of the market, which Sections A, C and D publish.
--- Two decimal places. The smallest non-zero cell a large lender can have is one
--- loan in twelve thousand, which prints as 0.01; only a lender above twenty
--- thousand originations can round a single loan away, and there are ten.
--- A lender with no originated loans at all, and there are 220, returns null on
--- every share rather than zero: it has no mix. Its amounts are 0, because zero
--- dollars is a fact while an undefined proportion is not.
--- A lender with nothing in one category gets a 0.00 share and 0 dollars.
--- Sex, not gender: the register files sex and HMDA names the field that way,
--- so the column names follow the source. Joint is a category of application
--- rather than a category of person, as in C2a.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not. The only
--- filter is on the applications, which are all in New York.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -3942,58 +3271,7 @@ product mix and sums to 100 across. The amount columns sum to column 4 exactly.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E10">Query E10</a></summary>
 
 ```sql
--- Lender share of originations by applicant race.
--- One row per lender. Columns 2 to 4 are the lender's own book. After them each
--- category gets a pair: the lender's loans in it as a share of that lender's own
--- originated loans, and the dollars behind them as an amount.
--- The denominator is the lender's OWN originated loans, column 3, not the
--- market's. So a row describes that lender's product mix and the share columns
--- sum to 100 across each row rather than down the column. The amount columns
--- sum to column 4 on every row, exactly, because they are sums rather than
--- quotients.
--- The count behind any share is recoverable as share / 100 x column 3, so
--- nothing is lost by showing a proportion. The dollars are not recoverable from
--- anything, which is why those stay absolute.
--- Market share is deliberately absent here: it lives in E1a, on both a loan
--- count and a loan amount basis. A lender's share of any single category is
--- (this share x E1a's loan-count market share) divided by that category's own
--- share of the market, which Sections A, C and D publish.
--- Two decimal places. The smallest non-zero cell a large lender can have is one
--- loan in twelve thousand, which prints as 0.01; only a lender above twenty
--- thousand originations can round a single loan away, and there are ten.
--- A lender with no originated loans at all, and there are 220, returns null on
--- every share rather than zero: it has no mix. Its amounts are 0, because zero
--- dollars is a fact while an undefined proportion is not.
--- A lender with nothing in one category gets a 0.00 share and 0 dollars.
--- Every category the regulator defines, including the codes for an unavailable
--- race and for free-form text. They are not groups of people and they are not
--- dropped, because removing them would change every share in the table without
--- saying so.
--- A market-share reading of this table is not available and is not meant to
--- be: these are proportions of each lender's own book. The question of whether
--- outcomes differ by group is a rate question, answered in C1a and D4 with
--- each group's own applications in the denominator.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not. The only
--- filter is on the applications, which are all in New York.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -4104,46 +3382,7 @@ six rows printed here.*
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=E11">Query E11</a></summary>
 
 ```sql
--- Lender geographic reach.
--- One row per lender, with the number of distinct census tracts in which it
--- made at least one originated loan. A census tract is a neighbourhood of a few
--- thousand people; A3 counts 5,281 of them in the New York data, which is the
--- figure a lender's count is read against.
--- No spread by tract: 5,281 columns is not a table. The count is the summary of
--- that spread, and it answers the question the spread would: how much of the
--- state does this lender actually lend in.
--- Tracts are counted on originated loans only, so the column measures where a
--- lender lent rather than where it took applications.
--- 'UNKNOWN' is excluded from both the numerator and the denominator. 3,373
--- originated loans across 67 lenders carry it, and counting it would hand each
--- of those lenders a phantom tract. A3 excludes it the same way, which is why
--- the denominator comes out at the 5,281 A3 publishes.
--- The denominator is a scalar subquery rather than a literal, so the coverage
--- column cannot drift from A3 if the data is reloaded.
--- Loans per tract is the density behind the coverage figure and is the column
--- that separates a regional lender dense in its own territory from a statewide
--- originator thin everywhere. Lenders with no originated loans return null
--- rather than zero, because nothing divided by no tracts is not a density.
--- Every lender in the register is returned, 1,139 of them. There is no filter on
--- where a lender is headquartered: 221 are in New York and 918 are not.
 WITH lender AS (
-    -- Two separate name problems, both fixed here so all three queries share one
-    -- definition of what a lender is.
-    -- First, the register files an institution name per year, and 1,279 LEIs
-    -- carry more than one spelling across the four years, almost all of them
-    -- differences of case or punctuation. Joining the dimension year by year
-    -- would split one lender into several rows, so one name is taken per LEI:
-    -- the most recent year's, with the name itself as a stable tie-break.
-    -- Second, a name is not an identifier. Nine names in the New York data are
-    -- shared by two LEIs. Six are unrelated banks that happen to share a name,
-    -- FIRST BANK of Burkburnett TX and FIRST BANK of Hamilton NJ, Five Star Bank
-    -- of Warsaw NY and Five Star Bank of Rancho Cordova CA, and grouping on the
-    -- name would silently merge them. Three are one institution filing under two
-    -- LEIs from the same city, where even the city does not separate them.
-    -- So the grain is the LEI, and the label is widened only as far as it has to
-    -- be: the city and state where the name alone is ambiguous, and the LEI
-    -- itself where the city does not settle it either. Every one of the 1,139
-    -- rows is then one filer with one label.
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']'
                 ELSE label
@@ -4254,20 +3493,6 @@ labelled as such rather than dressed up.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F1">Query F1</a></summary>
 
 ```sql
--- Outcome by debt-to-income band.
--- The single most actionable table in the project for an applicant, and the one
--- the denial reasons in Section D point straight at: debt-to-income is cited on
--- 32.87 percent of all denials, more than any other reason.
--- HMDA files this field two ways, which is why it needs normalising before use.
--- Outside the range 36 to 49 it arrives as a band string, '<20%', '20%-<30%',
--- '30%-<36%', '50%-60%', '>60%'. Inside that range it arrives as an exact
--- integer percentage. Grouping on the raw column would put 14 bands beside each
--- other on two different scales; the CASE puts them on one.
--- The band is not reported on 407,382 applications, and that row behaves
--- differently from every other: 47.59 percent withdrawal and 19.27 percent
--- incomplete. A debt-to-income ratio is computed during underwriting, so an
--- application that ended before underwriting has none. The row is kept because
--- it is a quarter of the register, and read as a stage rather than a ratio.
 WITH banded AS (
     SELECT f.action_taken,
            CASE WHEN f.debt_to_income_band IS NULL                                  THEN 9
@@ -4309,38 +3534,24 @@ ORDER BY b.band_key;
 
 </details>
 
-HMDA files this field two ways. Outside the range 36 to 49 it arrives as a band
-string; inside it, as an exact integer percentage. Grouping on the raw column
-would put nineteen values side by side on two different scales, so the query
-normalises them. The fourteen exact values are matched as strings rather than
-cast to integers, because a `CASE` is not guaranteed to stop evaluating once a
-branch matches and a cast of '50%-60%' fails even when an earlier branch caught
-it.
+**The strongest single relationship in the project, and a cliff rather than a
+slope.** The five bands from 20 to 49 percent cover 55.5 percent of all
+applications and sit within 1.92 points of each other. Then 50 to 60 denies at
+40.86 percent and above 60 at 90.42.
 
-**This is the strongest single relationship in the project, and it is a cliff
-rather than a slope.**
-
-From 20 percent to 49 percent the denial rate is flat: 13.89, 13.13, 13.18,
-13.45, 15.05. Five bands covering 55.5 percent of all applications, and the
-difference between the best and worst is 1.92 points.
-
-Then it breaks. **50 to 60 percent denies at 40.86 percent. Above 60 percent it
-denies at 90.42.** The step from 45-to-49 into 50-to-60 multiplies the denial
-rate by 2.7 and the next step by 2.2 again. 114,312 applications sit above 60
-percent and nine in ten are refused.
-
-**Below 20 percent the rate rises again**, to 24.49, worse than every band from
-20 to 49. The bottom of this distribution is not conservative borrowers; it is
-small second-lien business, which
+**Below 20 percent the rate rises again**, to 24.49. That bottom is not
+conservative borrowers, it is small second-lien business, which
 [F2](#f2-outcome-by-loan-to-income-and-loan-to-value-home-purchase-first-liens)
 separates out.
 
-**The not-reported row is a stage, not a ratio.** 407,382 applications, a quarter
-of the register, with a denial rate of only 7.44 percent but 47.59 percent
-withdrawal and 19.27 percent incompleteness. A debt-to-income ratio is computed
-during underwriting, so an application with none mostly never got that far. This
-row is the largest loss of applications anywhere in the data and not one of them
-is a credit decision.
+**The not-reported row is a stage, not a ratio.** A quarter of the register,
+denying at 7.44 percent but withdrawing at 47.59 and going incomplete at 19.27.
+The ratio is computed during underwriting, so these mostly never reached it. It
+is the largest loss of applications in the data and none of it is a credit
+decision.
+
+HMDA files this field as a band outside 36 to 49 percent and as an exact integer
+inside it, which is what the query normalises.
 
 ### F2. Outcome by Loan to Income and Loan to Value, Home Purchase First Liens
 
@@ -4365,22 +3576,6 @@ is a credit decision.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F2">Query F2</a></summary>
 
 ```sql
--- Outcome by loan-to-income and loan-to-value, home purchase first liens only.
--- The restriction is the point of this query, not a convenience. Measured across
--- the whole register these two ratios appear to say that lower is better and
--- then contradict themselves at the bottom: applications at under one times
--- income are denied at 25.55 percent against 14.37 percent at two to three
--- times. That is not a borrower effect. Applications at under one times income
--- are 70.6 percent subordinate-lien and 66.4 percent home improvement or other
--- purpose, and D3 showed those purposes denied at 35 percent. The ratio was
--- reading the product.
--- Holding purpose and lien constant removes it. What survives is a shallow floor
--- and a steep right-hand tail, which is the finding this query exists to show.
--- Both measures are in one table, on one restricted population, so the two
--- cannot be compared across different filters by accident. A measure column
--- carries which ratio each row describes.
--- Rows with no reported income or no reported loan-to-value are kept as their
--- own band rather than dropped, for the usual reason.
 WITH purchase AS (
     SELECT f.action_taken,
            CASE WHEN f.income_thousands IS NULL OR f.income_thousands <= 0        THEN 9
@@ -4452,31 +3647,25 @@ ORDER BY measure_order, band_key;
 
 </details>
 
-**The restriction is the point of this query, not a convenience.** Measured
-across the whole register these two ratios appear to say that lower is better
-and then contradict themselves at the bottom: applications at under one times
-income are denied at 25.55 percent against 14.37 at two to three times.
+**The restriction is the point of this query.** Across the whole register both
+ratios appear to reward lower values and then contradict themselves: under one
+times income denies at 25.55 percent against 14.37 at two to three. That is the
+product, not the borrower. Those applications are **70.6 percent
+subordinate-lien and 66.4 percent home improvement or other purpose**, purposes
+[D3](#d3-denial-reason-by-loan-purpose) put at 35 percent. Holding purpose and
+lien constant removes it.
 
-That is not a borrower effect. Applications at under one times income are **70.6
-percent subordinate-lien and 66.4 percent home improvement or other purpose**,
-and [D3](#d3-denial-reason-by-loan-purpose) showed those purposes denied at 35
-percent. The ratio was reading the product. Holding purpose and lien constant
-removes it.
-
-**Loan to income: flat to 4.0, then steep.** 9.83 under two times income, 7.49 at
-two to three, 8.34 at three to four. Three bands covering 75.3 percent of
-purchase applications, within 2.3 points of each other, and the lowest band is
-not the best. Then 10.67, **17.82 at five to six and 33.56 above six**.
-
-**Loan to value: flat to 95 percent, then steep.** 9.80, 9.66, 10.84, 10.86,
-13.56 up to 100 percent, so a borrower at 95 percent of value faces a denial rate
-3.8 points above one at 70 percent. **Above 100 percent it is 30.83**, three
-times the rate at 80.
-
-On this population leverage matters much less than people assume and
-loan-to-income matters more, and both have a threshold rather than a gradient.
+**Both ratios are flat and then steep, and the threshold is the finding.** Loan
+to income stays within 2.3 points out to four times income, then reaches 33.56
+above six. Loan to value moves 3.8 points out to 95 percent, then trebles above
+100.
 
 ### F3. Lender Outcomes on One Product
+
+*All 72 lenders with 2,000 or more such applications are returned, ordered by
+denial rate. The table shows the five lowest and the five highest; the run-live
+link returns the complete result. Figures quoted below come from the full 72,
+not only from the ten rows printed here.*
 
 | lender_name | total_applications | approval_rate | denial_rate | median_loan_to_value | median_loan_to_income | median_applicant_income |
 |---|---|---|---|---|---|---|
@@ -4485,68 +3674,7 @@ loan-to-income matters more, and both have a threshold rather than a gradient.
 | Lyons National Bank | 2,560 | 92.97 | 1.64 | 80.00 | 2.02 | 110,000 |
 | Premium Mortgage Corporation | 16,996 | 90.47 | 1.88 | 80.00 | 2.18 | 103,000 |
 | Homestead Funding Corp. | 14,418 | 83.70 | 1.88 | 85.07 | 2.30 | 110,000 |
-| FM Home Loans LLC | 3,786 | 77.71 | 2.25 | 75.57 | 3.13 | 187,000 |
-| Morgan Stanley Private Bank NA | 3,637 | 85.40 | 2.72 | 75.00 | 2.29 | 425,000 |
-| Hunt Mortgage Corporation | 4,106 | 83.41 | 2.75 | 85.00 | 2.24 | 99,000 |
-| Hometown Funding, INC. D/B/A CNB Mortgage Company | 3,506 | 93.98 | 2.80 | 80.00 | 2.12 | 104,000 |
-| METRO CITY BANK | 2,180 | 93.35 | 2.89 | 60.00 | 2.04 | 214,000 |
-| GENESEE REGIONAL BANK | 6,260 | 91.02 | 2.92 | 85.00 | 2.11 | 102,000 |
-| Contour Mortgage Corporation | 7,513 | 74.27 | 3.10 | 80.00 | 3.08 | 148,000 |
-| PRIMELENDING | 5,214 | 87.76 | 3.61 | 85.00 | 2.36 | 106,000 |
-| GUARANTEED RATE AFFINITY, LLC | 2,645 | 53.80 | 3.74 | 79.81 | 2.61 | 199,000 |
-| CROSSCOUNTRY MORTGAGE, LLC | 17,534 | 77.00 | 3.84 | 80.00 | 2.63 | 148,000 |
-| 1ST PRIORITY MORTGAGE, INC. | 5,539 | 88.75 | 3.86 | 80.00 | 2.30 | 98,000 |
-| GUARANTEED RATE, INC. | 5,675 | 60.26 | 3.93 | 80.00 | 2.58 | 163,000 |
-| NATIONWIDE MORTGAGE BANKERS, INC. | 5,544 | 81.51 | 4.04 | 80.00 | 3.73 | 127,000 |
-| UNITED MORTGAGE CORP. | 2,967 | 87.26 | 4.25 | 80.00 | 3.39 | 146,000 |
-| Tompkins Community Bank | 2,552 | 88.44 | 4.39 | 80.00 | 2.05 | 110,000 |
-| MOVEMENT MORTGAGE, LLC | 5,043 | 89.53 | 4.44 | 82.99 | 2.30 | 106,000 |
-| Cliffco, Inc. | 2,676 | 74.66 | 4.52 | 80.00 | 2.96 | 168,000 |
-| Embrace Home Loans, Inc. | 3,078 | 85.41 | 4.55 | 80.00 | 2.88 | 168,000 |
-| Five Star Bank (Warsaw, NY) | 2,050 | 85.27 | 4.63 | 90.00 | 2.50 | 67,000 |
-| Meadowbrook Financial Mortgage Bankers Corp. | 3,188 | 69.17 | 4.67 | 80.00 | 3.48 | 149,000 |
-| UNMB Home Loans Inc | 2,668 | 79.24 | 4.69 | 80.00 | 2.99 | 136,000 |
-| ESL Federal Credit Union | 2,568 | 89.80 | 4.79 | 88.33 | 2.18 | 82,000 |
-| East Coast Capital Corp. | 2,133 | 67.51 | 5.30 | 80.00 | 3.38 | 147,000 |
-| East West Bank | 5,562 | 87.14 | 5.32 | 50.00 | 5.00 | 99,000 |
-| VALLEY NATIONAL BANK | 2,348 | 83.77 | 5.66 | 80.00 | 2.91 | 148,000 |
-| EMPOWER FEDERAL CREDIT UNION | 3,561 | 86.13 | 5.70 | 90.00 | 2.12 | 73,000 |
-| CMG MORTGAGE INC | 2,547 | 84.84 | 5.77 | 80.00 | 3.10 | 140,000 |
-| HSBC BANK USA, NA | 3,055 | 66.22 | 6.58 | 75.00 | 2.68 | 290,000 |
-| Cathay Bank | 3,698 | 82.23 | 6.65 | 64.66 | 3.34 | 148,000 |
-| Citibank, NA | 16,832 | 73.89 | 7.25 | 77.36 | 2.49 | 259,000 |
-| HUDSON VALLEY CREDIT UNION | 2,390 | 70.67 | 7.53 | 80.00 | 2.48 | 118,000 |
-| A&D MORTGAGE LLC | 3,846 | 63.31 | 7.62 | 75.00 | 2.92 | 176,000 |
-| Better Mortgage Corporation | 2,087 | 39.00 | 7.81 | 80.00 | 2.81 | 165,000 |
-| NORWICH COMMERCIAL GROUP INC | 2,022 | 82.54 | 7.96 | 80.00 | 3.66 | 149,000 |
-| Loan Funder LLC | 5,275 | 59.79 | 8.19 | 65.59 |  |  |
-| Trustco Bank | 3,679 | 71.24 | 8.21 | 82.88 | 2.33 | 131,000 |
-| US BANK, N.A. | 5,047 | 70.83 | 8.56 | 79.41 | 2.52 | 258,000 |
-| JPMorgan Chase Bank, NA | 37,265 | 71.89 | 8.69 | 78.00 | 2.60 | 149,000 |
-| loanDepot.com LLC | 6,907 | 76.24 | 9.16 | 80.00 | 2.77 | 142,000 |
-| Quontic Bank | 3,484 | 68.37 | 9.30 | 75.00 | 2.99 | 148,000 |
-| FOURLEAF FEDERAL CREDIT UNION | 3,530 | 70.54 | 9.41 | 77.00 | 2.55 | 170,000 |
-| United Wholesale Mortgage | 35,139 | 79.73 | 9.45 | 80.00 | 3.14 | 130,000 |
-| CARDINAL FINANCIAL COMPANY, LI | 3,292 | 86.21 | 9.63 | 80.00 | 3.15 | 140,000 |
-| M&T BANK | 10,995 | 79.91 | 9.80 | 80.00 | 2.40 | 98,000 |
-| THE FEDERAL SAVINGS BANK | 2,127 | 67.98 | 10.01 | 80.00 | 3.55 | 142,000 |
-| NEWREZ LLC | 5,013 | 69.08 | 10.35 | 80.00 | 2.59 | 147,000 |
-| AMERICU CREDIT UNION | 2,611 | 79.17 | 10.49 | 90.00 | 2.10 | 86,000 |
-| AMERICAN FINANCIAL NETWORK, INC. | 2,197 | 58.67 | 10.56 | 80.00 | 2.87 | 163,000 |
-| CALIBER HOME LOANS, INC. | 2,361 | 73.53 | 10.59 | 80.00 | 3.05 | 117,000 |
-| WELLS FARGO BANK NA | 20,954 | 61.27 | 10.78 | 75.00 | 2.50 | 236,000 |
-| FAIRWAY INDEPENDENT MORT CORP | 4,076 | 79.51 | 10.92 | 80.00 | 2.60 | 127,000 |
-| NBT BANK NA | 3,279 | 81.34 | 10.98 | 80.00 | 2.07 | 99,000 |
-| Community Bank, N.A. | 11,952 | 73.57 | 11.04 | 90.00 | 1.82 | 83,000 |
-| PENNYMAC LOAN SERVICES LLC | 3,848 | 76.33 | 11.59 | 80.00 | 3.12 | 161,000 |
-| KEYBANK NATIONAL ASSOCIATION | 5,997 | 77.51 | 12.04 | 80.00 | 2.34 | 95,000 |
-| TD Bank | 9,287 | 66.31 | 12.75 | 75.69 | 2.75 | 223,000 |
-| MUNICIPAL CREDIT UNION | 2,885 | 68.46 | 13.34 | 80.00 | 2.97 | 125,000 |
-| CITIZENS BANK, NA | 13,894 | 70.33 | 13.70 | 78.20 | 2.66 | 212,000 |
-| ROCKET MORTGAGE | 19,284 | 76.88 | 13.84 | 80.00 | 2.58 | 124,000 |
-| Bank of America NA | 11,600 | 71.39 | 17.76 | 80.00 | 2.58 | 179,000 |
-| PLAZA HOME MORTGAGE, INC | 4,903 | 75.40 | 18.80 | 80.00 | 2.70 | 124,000 |
-| Navy Federal Credit Union | 2,555 | 46.07 | 18.83 | 89.04 | 2.32 | 125,000 |
+| &#8942; &nbsp;*62 lenders skipped*&nbsp; &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; | &#8942; |
 | HomeBridge Financial Services, Inc | 3,170 | 73.38 | 24.20 | 80.00 | 3.28 | 142,000 |
 | Flagstar Bank NA | 2,708 | 59.31 | 31.57 | 80.00 | 2.72 | 138,000 |
 | 21ST MORTGAGE | 7,552 | 20.83 | 45.26 |  | 1.67 | 60,000 |
@@ -4557,22 +3685,6 @@ loan-to-income matters more, and both have a threshold rather than a gradient.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F3">Query F3</a></summary>
 
 ```sql
--- Lender outcomes on one product: conventional, first-lien home purchase.
--- Section E showed denial rates from 1.90 to 50.71 percent across the largest
--- lenders, and E1b showed that most of that was product mix rather than
--- decisions. This query removes the mix. Every row is the same product, so the
--- spread that remains is not explained by one lender writing second liens and
--- another writing first mortgages.
--- The floor of 2,000 applications on this one product is what makes the rates
--- stable enough to rank.
--- Columns 5 to 7 are here so a reader can test the obvious objection, that the
--- low-denial lenders simply receive stronger applications. They are the median
--- leverage, median loan-to-income and median applicant income of the
--- applications each lender received, decided ones only, so they describe the
--- queue rather than the outcome.
--- This is association, not cause. A lender's denial rate reflects who applies to
--- it as well as how it decides, and HMDA holds no credit score, so nothing here
--- isolates the decision. What it does establish is the size of the stakes.
 WITH lender AS (
     SELECT lei,
            CASE WHEN label_holders > 1 THEN label || ' [' || lei || ']' ELSE label END AS lender_name
@@ -4598,15 +3710,15 @@ SELECT l.lender_name,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken IN ('1','2','3','7','8')
                             THEN f.loan_to_value_ratio END)
-             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_value,
+             AS DECIMAL(24,8)), 2)                                         AS median_loan_to_value,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken IN ('1','2','3','7','8') AND f.income_thousands > 0
                             THEN f.loan_amount / (f.income_thousands * 1000) END)
-             AS DECIMAL(24,8)), 2)                                                AS median_loan_to_income,
+             AS DECIMAL(24,8)), 2)                                         AS median_loan_to_income,
        round(CAST(percentile_disc(0.5) WITHIN GROUP (
               ORDER BY CASE WHEN f.action_taken IN ('1','2','3','7','8') AND f.income_thousands > 0
                             THEN f.income_thousands * 1000 END)
-             AS DECIMAL(24,8)))                                                   AS median_applicant_income
+             AS DECIMAL(24,8)))                                            AS median_applicant_income
 FROM marts.fct_application f
 JOIN lender l ON l.lei = f.lei
 JOIN marts.dim_loan_product p ON p.loan_product_sk = f.loan_product_sk
@@ -4621,30 +3733,23 @@ ORDER BY denial_rate, l.lei;
 
 </details>
 
-**[E1a](#e1a-lender-outcomes-and-market-share)'s lender spread was mostly product
-mix. This is what is left when the mix is removed.** Same product for every row:
-conventional, first lien, home purchase, for the 72 lenders with 2,000 or more
-such applications. Denial runs from **1.14 percent to 51.39**, and excluding the
-three manufactured-housing lenders at the bottom, whose collateral is a different
-class and two of which report no property value at all, from **1.14 to 31.57**.
-The median of the 72 is 7.58.
+**[E1a](#e1a-lender-outcomes-and-market-share)'s lender spread was mostly
+product mix. This is what is left when the mix is removed.** Same product in
+every row, for the 72 lenders with 2,000 or more such applications. The range
+narrows to 1.14 to 31.57 percent excluding the three manufactured-housing
+lenders at the bottom, whose collateral is a different class. The median is 7.58.
 
-**Columns 5 to 7 exist so a reader can kill the obvious objection, and they do.**
-The objection is that low-denial lenders simply receive stronger applications:
+**Columns 5 to 7 kill the obvious objection, that low-denial lenders simply
+receive stronger applications.**
 
 | lender | applications | median LTV | median LTI | median income | denial rate |
 |---|---|---|---|---|---|
 | SEFCU Services, LLC | 10,639 | **90.00** | 2.41 | **110,000** | **1.14** |
 | Bank of America NA | 11,600 | 80.00 | 2.58 | 179,000 | **17.76** |
 
-SEFCU's applicants are **more leveraged and have substantially lower incomes**,
-and it denies them **15.6 times less often**. United Wholesale carries the
-highest median loan-to-income in the upper group at 3.14 and denies at 9.45
-percent against Bank of America's 2.58 at 17.76.
-
-It is still not causal. A denial rate reflects who applies as well as how the
-lender decides, and there is no credit score here. What this establishes is the
-size of the stakes, not the mechanism.
+SEFCU's applicants are more leveraged and earn substantially less, and it denies
+them 15.6 times less often. Not causal: there is no credit score here, so this
+establishes the size of the stakes rather than the mechanism.
 
 ### F4. How Much Choice a Borrower Has, by Purpose
 
@@ -4661,18 +3766,6 @@ size of the stakes, not the mechanism.
 <summary>View SQL Query&nbsp; &middot; &nbsp;Run live <a href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/playground/#q=F4">Query F4</a></summary>
 
 ```sql
--- How much choice a borrower actually has, by what they are borrowing for.
--- A recommendation to compare lenders is only worth making if there are lenders
--- to compare, and that varies enormously by purpose. This counts them, and then
--- measures how much the choice is worth by the spread of denial rates among the
--- lenders large enough to rank.
--- lenders_active counts every lender that took an application for this purpose.
--- lenders_rankable counts those with at least 500, which is the floor at which a
--- denial rate is stable enough to compare. The p10 and p90 are taken across
--- those lenders' own denial rates, so the gap between them is the spread a
--- borrower is choosing between rather than the spread across all applications.
--- The percentiles are over lenders, not over applications, which is why they are
--- computed in a second pass: one lender is one observation regardless of size.
 WITH by_lender AS (
     SELECT p.loan_purpose,
            f.lei,
@@ -4716,31 +3809,18 @@ ORDER BY 2 DESC;
 
 </details>
 
-**Choice exists, it is worth a great deal, and both vary sharply by what you are
-borrowing for.**
+**Choice exists, it is worth a great deal, and both vary sharply by purpose.**
+For home purchase 934 lenders took an application and 191 took at least 500, and
+across those 191 the tenth and ninetieth percentiles are 3.05 and 24.33 percent.
+For home improvement only 493 took an application and 59 took 500. **A homeowner
+borrowing against a house they already own faces a market three times harder
+than a buyer, with half as many lenders in it.**
 
-For home purchase, 934 lenders took an application and 191 took at least 500.
-Among those 191 the tenth percentile denies at **3.05 percent and the ninetieth
-at 24.33**, an eight-fold spread between lenders a borrower could plausibly have
-chosen between.
+**The median lender is more generous than the market on every purpose**, because
+the market rate is weighted by volume and the largest lenders deny more often.
 
-For home improvement only 493 lenders took an application and 59 took 500. The
-market denies at 35.13 percent and the spread runs 10.36 to 47.51. **A homeowner
-borrowing against a house they already own faces a market three times harder than
-a buyer, with half as many lenders in it.**
-
-**The median lender is more generous than the market** on every purpose: 8.27
-against 10.78 on home purchase, 26.11 against 35.13 on home improvement, 17.15
-against 20.45 on refinancing. The market rate is weighted by volume, so the
-largest lenders deny more often than the median lender does.
-
-The percentiles are over lenders, not applications, computed in a second pass
-from a per-lender aggregate, so one lender is one observation regardless of size.
-
-One supporting figure from [E11](#e11-geographic-reach): **the median census
-tract has 44 different lenders originating loans in it**, with a quartile range
-of 31 to 60. Choice is not theoretical even at neighbourhood level; it is just
-invisible.
+The percentiles are over lenders rather than applications, so one lender is one
+observation regardless of size.
 
 
 ### The Recommendations
@@ -5061,7 +4141,7 @@ grouped on different things, and the two are compared.
 
 ## Author
 
-**Samuel Babajide** · [LinkedIn](https://www.linkedin.com/in/samuelbbabajide) · [Website](https://samuelbabajide.github.io/)
+Samuel Babajide — Data Scientist specialising in applied analytics and predictive
+modelling within complex, regulated environments.
 
-Source: Federal Financial Institutions Examination Council, HMDA Loan
-Application Register, New York State, 2022 to 2025.
+[Website](https://samuelbabajide.github.io/) · [LinkedIn](https://www.linkedin.com/in/samuelbbabajide)
