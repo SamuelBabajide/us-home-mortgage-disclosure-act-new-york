@@ -33,7 +33,7 @@ carries its result, its SQL and a short reading of what the result says, and the
 SQL is collapsed again so an open section shows prose and tables until you ask
 for the code.
 
-**onventions apply throughout, and they decide most of the numbers.**
+**Conventions apply throughout, and they decide most of the numbers.**
 
 **Purchased loans are excluded everywhere.** HMDA action code 6 records a loan a
 bank bought after another institution made it. The buyer made no decision, so
