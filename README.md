@@ -33,7 +33,7 @@ carries its result, its SQL and a short reading of what the result says, and the
 SQL is collapsed again so an open section shows prose and tables until you ask
 for the code.
 
-**Four conventions apply throughout, and they decide most of the numbers.**
+**onventions apply throughout, and they decide most of the numbers.**
 
 **Purchased loans are excluded everywhere.** HMDA action code 6 records a loan a
 bank bought after another institution made it. The buyer made no decision, so
@@ -41,26 +41,11 @@ the row belongs in neither the numerator nor the denominator of a decision rate.
 Including it would dilute every rate on this page by the volume of the secondary
 market. 158,743 rows are excluded on this rule, leaving 1,596,676.
 
-**An application ends in one of four ways and the four sum to 100.** Approval is
-action code 1, 2 or 8: originated, approved but not accepted by the applicant, or
-a preapproval request approved but not accepted. Denial is 3 or 7, a denial or a
-denied preapproval request. Incomplete is 5, withdrawal is 4. Reporting all four
-rather than approval and denial alone is what makes several findings on this page
-visible at all, because a lender or a group can reach a low denial rate by
-deciding well or by losing applications before a decision, and those are
-different things.
-
 **Medians use `percentile_disc`, not `percentile_cont`.** The continuous version
 interpolates between the two middle rows and returns a figure no borrower was
 charged; it also made PostgreSQL and DuckDB disagree in the third decimal on one
 query during an earlier phase of this project. The discrete version returns a
 value that is actually in the data and is exact in both engines.
-
-**Categories the regulator defines are never dropped, including the codes for
-"not available" and "not provided".** They are not groups of people, and removing
-them would change every share in every table without saying so. Several of them
-turn out to carry the most distinctive findings here, because an application
-filed by a company rather than a household leaves those fields blank.
 
 **Nothing on this page is causal, and the reason is specific.** HMDA records what
 lenders decided and the reasons they wrote down. It holds no credit score, no
