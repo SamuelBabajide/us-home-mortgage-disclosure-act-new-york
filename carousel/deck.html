@@ -47,7 +47,7 @@
   .slide::before{ content:""; position:absolute; top:0; left:0; right:0; height:4pt;
     background:linear-gradient(90deg,var(--gold) 0 38%,var(--blue) 38% 72%,var(--red) 72% 100%) }
 
-  .kicker{ font-size:11pt; letter-spacing:.34em; text-transform:uppercase;
+  .kicker{ font-size:13pt; letter-spacing:.32em; text-transform:uppercase;
     color:var(--gold-text); font-weight:700; margin-bottom:16pt }
   h1{ font-size:52pt; line-height:1.04; letter-spacing:-.018em; font-weight:700 }
   h2{ font-size:34pt; line-height:1.08; letter-spacing:-.014em; font-weight:700; margin-bottom:6pt }
@@ -65,10 +65,9 @@
   /* ---- hero numerals ---- */
   .heroes{ display:flex; gap:30pt; margin-top:34pt }
   .heroes.low{ margin-top:auto; margin-bottom:34pt }
-  .cover .heroes.low{ flex-direction:column; gap:20pt; max-width:400pt }
-  .cover .hero{ display:flex; align-items:baseline; gap:16pt }
-  .cover .hero .n{ font-size:36pt; min-width:196pt }
-  .cover .hero .l{ margin-top:0; font-size:12.5pt }
+  .cover .heroes.low{ flex-direction:column; gap:22pt; max-width:420pt }
+  .cover .hero .n{ font-size:38pt }
+  .cover .hero .l{ margin-top:6pt; font-size:12.5pt }
   .hero{ flex:1 }
   .hero .n{ font-size:40pt; font-weight:700; letter-spacing:-.02em; color:var(--gold-text);
     font-variant-numeric:tabular-nums; line-height:1 }
@@ -153,6 +152,11 @@
   .url{ display:block; margin-top:auto; font-size:15pt; font-weight:700; color:var(--gold-text);
     letter-spacing:-.01em; padding-top:24pt }
   .stack b{ color:var(--ink-2); font-weight:600 }
+  .chip.s .n{ font-size:26pt }
+  .tags{ display:flex; flex-wrap:wrap; gap:9pt; margin-top:22pt }
+  .tags span{ background:var(--panel-2); border-radius:14pt; padding:9pt 16pt;
+    font-size:11.5pt; color:var(--ink-2); font-weight:600 }
+  .tags.big-tags span{ font-size:13pt; padding:11pt 19pt; color:var(--ink) }
   a{ color:inherit; text-decoration:none }
   .big{ color:var(--gold-text); font-weight:700 }
   .rec p b.red, .note b.red, .red{ color:#E0756A; font-weight:700 }
@@ -166,9 +170,9 @@
   the lenders reported it. Modelled in PostgreSQL, analysed in forty-two queries,
   and runnable in your browser without installing anything.</p>
   <div class="heroes low">
-    <div class="hero"><div class="n">1,596,676</div><div class="l">applications decided</div></div>
-    <div class="hero"><div class="n">951,371</div><div class="l">loans originated</div></div>
-    <div class="hero"><div class="n">$371.4bn</div><div class="l">disbursed</div></div>
+    <div class="hero"><div class="n">1,596,676</div><div class="l">Applications decided</div></div>
+    <div class="hero"><div class="n">951,371</div><div class="l">Loans originated</div></div>
+    <div class="hero"><div class="n">$371.4bn</div><div class="l">Disbursed</div></div>
   </div>
   <div class="foot"><span><b>Samuel Babajide</b> · HMDA, New York State, 2022 to 2025</span>
     <span>swipe →</span></div>
@@ -310,7 +314,7 @@
 <!-- 7 ───────────────────────────────────────────────── denial reasons -->
 <section class="slide">
   <div class="kicker">Denial analysis</div>
-  <h2>The five reasons lenders<br>write down most</h2>
+  <h2>The three reasons lenders<br>write down most</h2>
   <div class="rhead" style="grid-template-columns:238pt 1fr 84pt 92pt">
     <span>Reason cited</span><span>Share of all citations</span><span>Share</span><span>Citations</span></div>
   <div class="rank">
@@ -323,17 +327,11 @@
     <div class="row" style="grid-template-columns:238pt 1fr 84pt 92pt"><div class="cat">Collateral</div>
       <div class="track"><div class="fill" style="width:53.09%"></div></div>
       <div class="pct">17.45%</div><div class="amt">71,778</div></div>
-    <div class="row" style="grid-template-columns:238pt 1fr 84pt 92pt"><div class="cat">Other</div>
-      <div class="track"><div class="fill" style="width:36.35%"></div></div>
-      <div class="pct">11.95%</div><div class="amt">49,153</div></div>
-    <div class="row" style="grid-template-columns:238pt 1fr 84pt 92pt"><div class="cat">Credit application incomplete</div>
-      <div class="track"><div class="fill" style="width:18.24%"></div></div>
-      <div class="pct">6.00%</div><div class="amt">24,663</div></div>
   </div>
   <div class="note"><b>The unit is a citation, not an application.</b> HMDA lets a lender give
-  up to four reasons, so 320,762 denied applications carry <b>411,362 citations</b>. Five more
-  reasons share the remaining 10.02 percent. Debt-to-income is cited more often than
-  collateral and "other" combined.</div>
+  up to four reasons, so 320,762 denied applications carry <b>411,362 citations</b>. These
+  three are <b>72.03 percent</b> of them and seven more reasons share the rest.
+  Debt-to-income alone is cited half as often again as credit history.</div>
 </section>
 
 <!-- 8 ───────────────────────────────────────────────── recommendations -->
@@ -361,31 +359,35 @@
   </div>
 </section>
 
-<!-- 9 ───────────────────────────────────────────────── caveats -->
+<!-- 9 ───────────────────────────────────────────────── the model -->
 <section class="slide">
-  <div class="kicker">What this cannot say</div>
-  <h2>The limits, stated<br>rather than buried</h2>
-  <p class="sub">HMDA records what lenders decided and the reason they wrote down. It holds
-  no credit score, no assets and no employment record. So every figure in this carousel is a
-  difference in <b style="color:var(--ink)">outcomes</b>, and nothing here isolates the
-  decision that produced it. Three conventions decide most of the numbers.</p>
-  <div class="bullets">
-    <div class="bullet g"><h4>Purchased loans are excluded everywhere</h4>
-      <p>Action code 6 records a loan a bank bought after another institution made it. The
-      buyer made no decision, so the row belongs in neither the numerator nor the denominator
-      of a rate. 158,743 rows excluded, leaving 1,596,676.</p></div>
-    <div class="bullet"><h4>An application ends in one of four ways, and the four sum to 100</h4>
-      <p>Approval, denial, file closed for incompleteness, withdrawal. Reporting all four is
-      what makes several findings visible at all: a lender can reach a low denial rate by
-      deciding well or by losing applications before a decision.</p></div>
-    <div class="bullet r"><h4>Categories the regulator defines are never dropped</h4>
-      <p>Including the codes for "not available" and "not provided". They are not groups of
-      people, and removing them would change every share in every table without saying so.</p></div>
+  <div class="kicker">The model</div>
+  <h2>99 flat columns<br>into 17 tables</h2>
+  <div class="chips">
+    <div class="chip s"><div class="n">1</div><div class="l">Partitioned fact</div></div>
+    <div class="chip s"><div class="n">4</div><div class="l">Yearly partitions</div></div>
+    <div class="chip s"><div class="n">8</div><div class="l">Dimensions</div></div>
+    <div class="chip s"><div class="n">2</div><div class="l">Of them junk</div></div>
   </div>
+  <div class="chips">
+    <div class="chip s"><div class="n">4</div><div class="l">Bridge tables</div></div>
+    <div class="chip s"><div class="n">1</div><div class="l">Quarantine table</div></div>
+    <div class="chip s"><div class="n">3</div><div class="l">Reference tables</div></div>
+    <div class="chip s"><div class="n">3</div><div class="l">Labelled views</div></div>
+  </div>
+  <div class="tags">
+    <span>md5 business key</span><span>year-keyed conformance</span>
+    <span>exact decimal arithmetic</span><span>42 queries, two engines</span>
+  </div>
+  <div class="note"><b>175 columns, 100 percent documented.</b> The published data dictionary
+  is generated from <b>pg_catalog</b> at build time, so it cannot describe a column that no
+  longer exists.<br><br>
+  HMDA strips every loan identifier before publication, so the business key is an
+  <b>md5 of the source row</b>. Rebuild the model on another machine and you get the same keys.</div>
 </section>
 
 <!-- 10 ──────────────────────────────────────────────── run it -->
-<section class="slide close">
+<section class="slide">
   <div class="kicker">Don't take my word for it</div>
   <h2>Run the queries yourself</h2>
   <div class="heroes" style="margin-top:26pt">
@@ -406,8 +408,20 @@
     <a class="link" href="https://github.com/SamuelBabajide/us-home-mortgage-disclosure-act-new-york"><span>→</span> The repository</a>
   </div>
   <a class="url" href="https://samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york/">samuelbabajide.github.io/us-home-mortgage-disclosure-act-new-york</a>
-  <div class="stack"><b>Built with</b> &nbsp; PostgreSQL 18 · dimensional modelling · data
-  quality assertions · query optimisation · Python · DuckDB WASM · Parquet · GitHub Pages</div>
+</section>
+
+<!-- 11 ──────────────────────────────────────────────── your turn -->
+<section class="slide close">
+  <div class="kicker">Your turn</div>
+  <h1>What would you<br>ask this data?</h1>
+  <p class="sub">Open the playground, change a query, press <b style="color:var(--ink)">Ctrl
+  + Enter</b>. If you find something I missed, I would like to know.</p>
+  <div class="kicker" style="margin-top:auto; margin-bottom:14pt">Built with</div>
+  <div class="tags big-tags">
+    <span>PostgreSQL 18</span><span>dimensional modelling</span><span>data quality assertions</span>
+    <span>query optimisation</span><span>Python</span><span>DuckDB WASM</span>
+    <span>Parquet</span><span>GitHub Pages</span>
+  </div>
   <div class="foot"><span><b>Samuel Babajide</b> — Data Scientist specialising in applied
   analytics and predictive modelling within complex, regulated environments.</span>
     <span><a href="https://samuelbabajide.github.io/">Website</a> · <a href="https://www.linkedin.com/in/samuelbbabajide">LinkedIn</a></span></div>
